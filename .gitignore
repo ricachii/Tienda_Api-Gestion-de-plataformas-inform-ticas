@@ -10,3 +10,8 @@ __pycache__/
 /tienda-api-ia/__pycache__/
 /tienda-api-ia/**/*.sqlite
 /tienda-api-ia/.pytest_cache/
+
+# Ignorar entornos/caches dentro de IA
+/tienda-api-ia/venv/
+/tienda-api-ia/__pycache__/
+/tienda-api-ia/.pytest_cache/

@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriSupps - Tienda de Suplementos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8fafc;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+
+        .search-filters {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box, .category-select {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .search-box:focus, .category-select:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+            padding: 2rem 0;
+        }
+
+        /* Products Grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .product-category {
+            background: #10b981;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+        }
+
+        .product-description {
+            color: #6b7280;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .product-price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #10b981;
+            margin-bottom: 1rem;
+        }
+
+        .product-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .quantity-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .quantity-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .quantity-display {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .add-to-cart-btn {
+            flex: 1;
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .add-to-cart-btn:hover {
+            background: #059669;
+        }
+
+        .add-to-cart-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        /* Cart */
+        .cart {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+        .cart-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #1f2937;
+        }
+
+        .cart-items {
+            margin-bottom: 1.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .cart-total {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: #1f2937;
+        }
+
+        .cart-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .cart-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .pay-btn {
+            background: #10b981;
+            color: white;
+        }
+
+        .pay-btn:hover {
+            background: #059669;
+        }
+
+        .clear-btn {
+            background: #ef4444;
+            color: white;
+        }
+
+        .clear-btn:hover {
+            background: #dc2626;
+        }
+
+        /* Messages */
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .search-filters {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .search-box, .category-select {
+                width: 100%;
+            }
+
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cart {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">💪 NutriSupps</div>
+                <div class="search-filters">
+                    <input type="text" id="searchInput" class="search-box" placeholder="Buscar productos...">
+                    <select id="categorySelect" class="category-select">
+                        <option value="">Todas las categorías</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="messageContainer"></div>
+        
+        <div class="main-content">
+            <main>
+                <div id="productsGrid" class="products-grid">
+                    <!-- Products will be loaded here -->
+                </div>
+            </main>
+
+            <aside class="cart">
+                <h2 class="cart-title">🛒 Carrito</h2>
+                <div id="cartItems" class="cart-items">
+                    <!-- Cart items will be loaded here -->
+                    <div style="text-align: center; color: #6b7280; padding: 2rem;">
+                        El carrito está vacío
+                    </div>
+                </div>
+                <div id="cartTotal" class="cart-total" style="display: none;">
+                    Total: $<span id="totalAmount">0.00</span>
+                </div>
+                <div class="cart-buttons">
+                    <button id="payBtn" class="cart-btn pay-btn" style="display: none;">
+                        Pagar
+                    </button>
+                    <button id="clearCartBtn" class="cart-btn clear-btn" style="display: none;">
+                        Vaciar Carrito
+                    </button>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let cart = [];
+        let products = [];
+        let categories = [];
+
+        // DOM elements
+        const searchInput = document.getElementById('searchInput');
+        const categorySelect = document.getElementById('categorySelect');
+        const productsGrid = document.getElementById('productsGrid');
+        const cartItems = document.getElementById('cartItems');
+        const cartTotal = document.getElementById('cartTotal');
+        const totalAmount = document.getElementById('totalAmount');
+        const payBtn = document.getElementById('payBtn');
+        const clearCartBtn = document.getElementById('clearCartBtn');
+        const messageContainer = document.getElementById('messageContainer');
+
+        // API base URL
+        const API_BASE = window.location.origin;
+
+        // Utility functions
+        function showMessage(message, type = 'success') {
+            messageContainer.innerHTML = `
+                <div class="message ${type}">${message}</div>
+            `;
+            setTimeout(() => {
+                messageContainer.innerHTML = '';
+            }, 5000);
+        }
+
+        function formatPrice(price) {
+            return new Intl.NumberFormat('es-ES', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(price);
+        }
+
+        // Cart functions
+        function updateCartDisplay() {
+            if (cart.length === 0) {
+                cartItems.innerHTML = `
+                    <div style="text-align: center; color: #6b7280; padding: 2rem;">
+                        El carrito está vacío
+                    </div>
+                `;
+                cartTotal.style.display = 'none';
+                payBtn.style.display = 'none';
+                clearCartBtn.style.display = 'none';
+                return;
+            }
+
+            let total = 0;
+            cartItems.innerHTML = '';
+
+            cart.forEach(item => {
+                const product = products.find(p => p.id === item.productId);
+                if (product) {
+                    const itemTotal = product.precio * item.quantity;
+                    total += itemTotal;
+
+                    cartItems.innerHTML += `
+                        <div class="cart-item">
+                            <div>
+                                <strong>${product.nombre}</strong>
+                                <br>
+                                <small>Cantidad: ${item.quantity}</small>
+                            </div>
+                            <div>$${formatPrice(itemTotal)}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            totalAmount.textContent = formatPrice(total);
+            cartTotal.style.display = 'block';
+            payBtn.style.display = 'block';
+            clearCartBtn.style.display = 'block';
+        }
+
+        function addToCart(productId, quantity) {
+            const existingItem = cart.find(item => item.productId === productId);
+            
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                cart.push({
+                    productId: productId,
+                    quantity: quantity
+                });
+            }
+
+            updateCartDisplay();
+            showMessage('Producto agregado al carrito');
+        }
+
+        // API functions
+        async function loadCategories() {
+            try {
+                const response = await fetch(`${API_BASE}/categorias`);
+                categories = await response.json();
+                
+                categorySelect.innerHTML = '<option value="">Todas las categorías</option>';
+                categories.forEach(category => {
+                    categorySelect.innerHTML += `
+                        <option value="${category}">${category}</option>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        async function loadProducts(category = '', query = '') {
+            try {
+                const params = new URLSearchParams();
+                if (category) params.append('cat', category);
+                if (query) params.append('q', query);
+                params.append('size', '20');
+
+                const response = await fetch(`${API_BASE}/productos?${params}`);
+                const data = await response.json();
+                products = data.items;
+
+                renderProducts();
+            } catch (error) {
+                console.error('Error loading products:', error);
+                showMessage('Error al cargar los productos', 'error');
+            }
+        }
+
+        function renderProducts() {
+            productsGrid.innerHTML = '';
+
+            if (products.length === 0) {
+                productsGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #6b7280;">
+                        No se encontraron productos
+                    </div>
+                `;
+                return;
+            }
+
+            products.forEach(product => {
+                const productElement = document.createElement('div');
+                productElement.className = 'product-card';
+                productElement.innerHTML = `
+                    <img src="${product.imagen_url || 'https://pub-cdn.sider.ai/u/U05XHWA5LXJ/web-coder/690029f961d18d6576efe9ce/resource/d4aad596-7512-4879-9399-af3ff86b84ff.jpg'}" 
+                         alt="${product.nombre}" 
+                         class="product-image"
+                         onerror="this.src='https://pub-cdn.sider.ai/u/U05XHWA5LXJ/web-coder/690029f961d18d6576efe9ce/resource/d4aad596-7512-4879-9399-af3ff86b84ff.jpg'">
+                    <div class="product-category">${product.categoria}</div>
+                    <h3 class="product-name">${product.nombre}</h3>
+                    <p class="product-description">${product.descripcion || 'Sin descripción'}</p>
+                    <div class="product-price">$${formatPrice(product.precio)}</div>
+                    <div class="product-stock" style="color: ${product.stock > 0 ? '#10b981' : '#ef4444'}; margin-bottom: 1rem;">
+                        ${product.stock > 0 ? `Stock: ${product.stock}` : 'Sin stock'}
+                    </div>
+                    <div class="product-controls">
+                        <div class="quantity-controls">
+                            <button class="quantity-btn" onclick="decreaseQuantity(${product.id})">-</button>
+                            <span class="quantity-display" id="quantity-${product.id}">1</span>
+                            <button class="quantity-btn" onclick="increaseQuantity(${product.id})">+</button>
+                        </div>
+                        <button class="add-to-cart-btn" 
+                                onclick="addToCartFromUI(${product.id})"
+                                ${product.stock === 0 ? 'disabled' : ''}>
+                            ${product.stock === 0 ? 'Sin Stock' : 'Agregar'}
+                        </button>
+                    </div>
+                `;
+                productsGrid.appendChild(productElement);
+            });
+        }
+
+        // UI event handlers
+        function increaseQuantity(productId) {
+            const quantityElement = document.getElementById(`quantity-${productId}`);
+            let quantity = parseInt(quantityElement.textContent);
+            const product = products.find(p => p.id === productId);
+            
+            if (product && quantity < product.stock) {
+                quantity++;
+                quantityElement.textContent = quantity;
+            }
+        }
+
+        function decreaseQuantity(productId) {
+            const quantityElement = document.getElementById(`quantity-${productId}`);
+            let quantity = parseInt(quantityElement.textContent);
+            
+            if (quantity > 1) {
+                quantity--;
+                quantityElement.textContent = quantity;
+            }
+        }
+
+        function addToCartFromUI(productId) {
+            const quantityElement = document.getElementById(`quantity-${productId}`);
+            const quantity = parseInt(quantityElement.textContent);
+            
+            addToCart(productId, quantity);
+            // Reset quantity to 1
+            quantityElement.textContent = '1';
+        }
+
+        async function processPayment() {
+            if (cart.length === 0) return;
+
+            try {
+                const promises = cart.map(item => 
+                    fetch(`${API_BASE}/compras`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            producto_id: item.productId,
+                            cantidad: item.quantity
+                        })
+                    })
+                );
+
+                const results = await Promise.allSettled(promises);
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (let i = 0; i < results.length; i++) {
+                    const result = results[i];
+                    if (result.status === 'fulfilled' && result.value.ok) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                    }
+                }
+
+                if (errorCount === 0) {
+                    showMessage('¡Compra realizada con éxito!');
+                    cart = [];
+                    updateCartDisplay();
+                    await loadProducts(); // Refresh products to update stock
+                } else {
+                    showMessage(`Se completaron ${successCount} compras, ${errorCount} fallaron`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Payment error:', error);
+                showMessage('Error al procesar la compra', 'error');
+            }
+        }
+
+        function clearCart() {
+            cart = [];
+            updateCartDisplay();
+            showMessage('Carrito vaciado');
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value;
+            const category = categorySelect.value;
+            loadProducts(category, query);
+        });
+
+        categorySelect.addEventListener('change', (e) => {
+            const category = e.target.value;
+            const query = searchInput.value;
+            loadProducts(category, query);
+        });
+
+        payBtn.addEventListener('click', processPayment);
+        clearCartBtn.addEventListener('click', clearCart);
+
+        // Initialize
+        async function init() {
+            await loadCategories();
+            await loadProducts();
+            updateCartDisplay();
+        }
+
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
