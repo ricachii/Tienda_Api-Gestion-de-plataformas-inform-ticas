@@ -1,81 +1,60 @@
+<!-- Estructura visual (HTML) --> 
+
 <!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>💊 VitaZone • Tienda</title>
-  <style>
-    :root{
-      --bg:#f9fafb;--card:#fff;--prim:#4f46e5;--prim-2:#6366f1;--bd:#e5e7eb;
-      --ok:#16a34a;--err:#b91c1c;--txt:#111;--muted:#666;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);font-family:Inter,system-ui,Arial,sans-serif;color:var(--txt)}
-    header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--bd);
-      padding:14px 18px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;z-index:10}
-    h1{font-size:1.2rem;margin:0;display:flex;align-items:center;gap:6px;white-space:nowrap}
-    input,select,button{border:1px solid var(--bd);border-radius:10px;padding:9px 12px;font-size:1rem}
-    button{cursor:pointer;background:var(--prim);color:#fff;border:none}
-    button:hover{background:var(--prim-2)}
-    button:disabled{opacity:.55;cursor:not-allowed}
-    .muted{color:var(--muted);font-size:.9rem}
-    main{max-width:1250px;margin:20px auto;display:grid;grid-template-columns:1fr 340px;gap:22px;padding:0 16px}
-    @media(max-width:960px){main{grid-template-columns:1fr}}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
-    .card{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.06);
-      display:flex;flex-direction:column;transition:transform .15s}
-    .card:hover{transform:translateY(-4px)}
-    .ph{width:100%;aspect-ratio:1/1;background:#eef2ff;display:grid;place-items:center;color:#94a3b8;font-size:.9rem}
-    .card img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
-    .cnt{padding:14px}
-    .cat{font-size:.8rem;background:#eef2ff;color:var(--prim);padding:3px 10px;border-radius:20px;width:max-content;margin-bottom:6px}
-    .name{font-weight:600;font-size:1.05rem;margin:2px 0}
-    .desc{color:var(--muted);font-size:.9rem;min-height:34px}
-    .price{font-weight:700;margin:6px 0;font-size:1rem}
-    .row{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
-    .qtybtn{background:var(--prim);color:#fff;min-width:36px;height:36px;border-radius:10px;border:none;font-size:1.1rem;display:grid;place-items:center}
-    .qty{width:68px;text-align:center;padding:8px;border-radius:10px;border:1px solid var(--bd)}
-    .addbtn{flex:1;background:var(--prim);color:#fff;border:none;border-radius:10px;padding:10px;font-weight:600}
-    .addbtn:hover{background:var(--prim-2)}
-    .stock{font-size:.85rem;color:var(--muted);margin-top:4px}
-    aside{background:var(--card);border-radius:16px;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
-    .cart-empty{color:var(--muted)}
-    .carrito-item{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border-bottom:1px solid var(--bd);padding:8px 0}
-    .carrito-qty{display:flex;gap:6px;align-items:center}
-    .tot{display:flex;justify-content:space-between;font-weight:700;margin-top:12px}
-    footer{text-align:center;margin:24px 0;color:var(--muted);font-size:.9rem}
-    .alert{position:fixed;top:16px;right:16px;background:#fff;border:1px solid var(--bd);padding:10px 14px;
-      border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);animation:fade 2.2s forwards}
-    @keyframes fade{0%{opacity:1}80%{opacity:1}100%{opacity:0}}
-    .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .link{background:#eef2ff;color:var(--prim);border:1px solid #dbe3ff}
-  </style>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header>
-    <h1>💊 VitaZone • Tienda</h1>
+    <div class="brand"><h1>💊 VitaZone • Tienda</h1></div>
     <div class="toolbar">
-      <input id="q" placeholder="Buscar (ej. whey, omega, shorts)">
-      <select id="catSel"><option value="">Todas las categorías</option></select>
-      <button id="buscar">Buscar</button>
-      <a class="link" href="/docs" target="_blank" style="text-decoration:none;padding:9px 12px;border-radius:10px">Swagger</a>
-      <a class="link" href="/redoc" target="_blank" style="text-decoration:none;padding:9px 12px;border-radius:10px">ReDoc</a>
+      <div class="pill">
+        <input id="q" type="search" placeholder="Buscar (ej. whey, omega, creatina)" aria-label="Buscar productos">
+        <button id="buscar" aria-label="Buscar">Buscar</button>
+      </div>
+      <select id="catSel" aria-label="Filtrar por categoría"><option value="">Todas</option></select>
+      <a class="link" href="/docs" target="_blank" rel="noopener">Swagger</a>
+      <a class="link" href="/redoc" target="_blank" rel="noopener">ReDoc</a>
+      <div class="cart-pill" title="Ítems en el carrito">
+        <span>🛒</span><span id="cartCount" class="badge">0</span>
+      </div>
     </div>
   </header>
 
   <main>
     <section>
-      <div id="alertas"></div>
-      <div class="grid" id="productos"></div>
+      <div id="alertas" aria-live="polite" class="sr-only"></div>
+
+      <div id="loading" class="load-skel" style="display:none" aria-hidden="true">
+        <div class="load-card"></div><div class="load-card"></div><div class="load-card"></div>
+        <div class="load-card"></div><div class="load-card"></div><div class="load-card"></div>
+      </div>
+
+      <div class="grid" id="productos" aria-live="polite"></div>
+
+      <div id="listFooter" class="toolbar-row" style="justify-content:center;margin-top:12px;display:none">
+        <button id="loadMore" class="ghost">Cargar más</button>
+        <span id="endMsg" class="muted" style="display:none">No hay más resultados</span>
+      </div>
     </section>
 
     <aside>
-      <h3>🛒 Carrito</h3>
-      <div id="cart" class="cart-empty">Vacío</div>
+      <h3 style="margin:6px 0 4px">🛒 Carrito</h3>
+      <div id="cart" class="cart-empty" aria-live="polite">Vacío</div>
+
+      <div class="subt"><span>Subtotal</span><span id="subtotal">$0</span></div>
+      <div class="subt"><span>Despacho (estimado)</span><span id="ship">$0</span></div>
+      <div class="subt"><span>Descuentos</span><span id="disc">$0</span></div>
       <div class="tot"><span>Total</span><span id="total">$0</span></div>
-      <div class="row" style="margin-top:10px">
-        <button id="vaciar" style="background:#eee;color:#000">Vaciar</button>
-        <button id="pagar">Pagar</button>
+
+      <div class="foot-actions">
+        <button id="vaciar" class="ghost" aria-label="Vaciar carrito">Vaciar</button>
+        <button id="resumen" class="warn" aria-label="Ver resumen">Resumen</button>
+        <button id="pagar" aria-label="Pagar">Pagar</button>
       </div>
       <p class="muted" style="margin-top:8px">API: <code id="apiBase"></code></p>
     </aside>
@@ -83,217 +62,66 @@
 
   <footer>© VitaZone — demo académica</footer>
 
-  <script>
-    const API_BASE = window.location.origin;
-    document.getElementById('apiBase').textContent = API_BASE;
-
-    // ====== Estado ======
-    let carrito = JSON.parse(localStorage.getItem('carrito')||'[]');
-
-    // ====== Util ======
-    const fmt = n => Number(n||0).toLocaleString('es-CL');
-    const alerta = (msg,t='ok')=>{
-      const el=document.createElement('div');
-      el.className='alert';
-      el.style.borderColor=(t==='err')?'#f87171':'#4ade80';
-      el.innerHTML=msg;
-      document.body.appendChild(el);
-      setTimeout(()=>el.remove(),2200);
-    };
-    const saveCart = ()=> localStorage.setItem('carrito', JSON.stringify(carrito));
-
-    // ====== Data ======
-    async function fetchJSON(url){
-      const r = await fetch(url);
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      return r.json();
-    }
-
-    async function cargarCategorias(){
-    try{
-      const cats = await fetch(`${window.location.origin}/categorias`).then(r=>r.json());
-      // cats = ["proteínas","vitaminas", ...]
-      const sel = document.getElementById('catSel');
-      sel.innerHTML =
-        '<option value="">Todas las categorías</option>' +
-        cats.map(c => `<option value="${c}">${c}</option>`).join('');
-    }catch(e){
-      /* opcional: mostrar alerta */
-    }
-  }
-
-    // ====== Render productos ======
-    function imageHtml(src, alt){
-      const safe = src || '';
-      return safe
-        ? `<img loading="lazy" src="${safe}" alt="${alt}" onerror="this.closest('.imgwrap').innerHTML='<div class=&quot;ph&quot;>Imagen</div>'">`
-        : `<div class="ph">Imagen</div>`;
-    }
-
-    async function cargarProductos(){
-      const q = document.getElementById('q').value.trim();
-      const cat = document.getElementById('catSel').value;
-      const p = new URLSearchParams({q,cat,page:1,size:50});
-      const data = await fetchJSON(`${API_BASE}/productos?${p}`);
-      const items = data.items||[];
-      const cont = document.getElementById('productos');
-
-      cont.innerHTML = items.map(p=>`
-        <div class="card" data-id="${p.id}" data-stock="${p.stock}">
-          <div class="imgwrap">
-            ${imageHtml(p.imagen_url, p.nombre)}
-          </div>
-          <div class="cnt">
-            <div class="cat">${p.categoria||''}</div>
-            <div class="name">${p.nombre}</div>
-            <div class="desc">${p.descripcion||''}</div>
-            <div class="price">$${fmt(p.precio)}</div>
-            <div class="row">
-              <button class="qtybtn menos" title="Restar">−</button>
-              <input class="qty" type="number" value="1" min="1" max="${p.stock}">
-              <button class="qtybtn mas" title="Sumar">+</button>
-              <button class="addbtn">Agregar 🛒</button>
+  <!-- ===== Modal Resumen ===== -->
+  <div id="ovSummary" class="overlay" role="dialog" aria-modal="true" aria-labelledby="sumTitle">
+    <div class="modal" role="document">
+      <header>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <h3 id="sumTitle" style="margin:0">🧾 Resumen de compra</h3>
+          <button class="x" data-close="ovSummary" aria-label="Cerrar">✕</button>
+        </div>
+      </header>
+      <div class="content">
+        <div id="sumEmpty" class="muted">Tu carrito está vacío.</div>
+        <div id="sumContent" style="display:none">
+          <div class="receipt" id="receiptItems"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+            <div class="field">
+              <label for="inpNombre">Nombre (opcional)</label>
+              <input id="inpNombre" type="text" placeholder="Nombre y apellido">
             </div>
-            <div class="stock">${p.stock>0?`Stock: ${p.stock}`:'Sin stock'}</div>
+            <div class="field">
+              <label for="inpEmail">Email (opcional)</label>
+              <input id="inpEmail" type="email" placeholder="tu@correo.com">
+            </div>
           </div>
-        </div>`).join('');
+          <p class="muted" style="margin:8px 0 0">Los datos se guardan localmente para próximas compras.</p>
+          <p id="sumErr" class="errtxt" style="display:none"></p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="ghost" data-close="ovSummary">Seguir comprando</button>
+        <button id="btnConfirmarResumen">Confirmar y pagar</button>
+      </div>
+    </div>
+  </div>
 
-      // Comportamiento por tarjeta
-      document.querySelectorAll('.card').forEach(card=>{
-        const id  = +card.dataset.id;
-        const max = +card.dataset.stock || 0;
-        const qty = card.querySelector('.qty');
-        const btnAdd = card.querySelector('.addbtn');
-        const btnMenos = card.querySelector('.menos');
-        const btnMas   = card.querySelector('.mas');
+  <!-- ===== Modal Boleta ===== -->
+  <div id="ovDone" class="overlay" role="dialog" aria-modal="true" aria-labelledby="doneTitle">
+    <div class="modal" role="document">
+      <header>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <h3 id="doneTitle" style="margin:0">✅ Compra realizada</h3>
+          <button class="x" data-close="ovDone" aria-label="Cerrar">✕</button>
+        </div>
+      </header>
+      <div class="content">
+        <div class="receipt">
+          <h4>Boleta</h4>
+          <div class="rline"><span>Orden</span><strong id="doneOrder">—</strong></div>
+          <div class="rline"><span>Total</span><strong id="doneTotal">—</strong></div>
+          <div id="doneItems" style="margin-top:6px"></div>
+        </div>
+        <p class="oktxt" style="margin-top:8px">¡Gracias por tu compra!</p>
+      </div>
+      <div class="actions">
+        <button class="ghost" data-close="ovDone">Cerrar</button>
+        <button id="btnSeguir">Seguir comprando</button>
+      </div>
+    </div>
+  </div>
 
-        if(max<=0){ btnAdd.disabled = true; qty.disabled = true; }
-
-        btnMenos.onclick = ()=>{
-          qty.value = Math.max(1, Number(qty.value||1)-1);
-        };
-        btnMas.onclick = ()=>{
-          const v = Math.min(max||99, Number(qty.value||1)+1);
-          qty.value = v;
-        };
-        qty.oninput = ()=>{
-          let v = Number(qty.value||1);
-          if(Number.isNaN(v)) v = 1;
-          v = Math.max(1, Math.min(max||99, v));
-          qty.value = v;
-        };
-        btnAdd.onclick = ()=> agregar(id, Number(qty.value||1));
-      });
-    }
-
-    // ====== Carrito ======
-    function agregar(id,cant){
-      // Buscar producto para snapshot
-      fetch(`${API_BASE}/productos?page=1&size=200`)
-        .then(r=>r.json())
-        .then(j=>{
-          const prod=(j.items||[]).find(p=>p.id===id);
-          if(!prod){ alerta('Producto no encontrado','err'); return; }
-          if(prod.stock<=0){ alerta('Sin stock','err'); return; }
-
-          const ex = carrito.find(i=>i.id===id);
-          const nueva = ex ? Math.min(prod.stock, ex.cant + cant) : Math.min(prod.stock, cant);
-          if(ex) ex.cant = nueva; else carrito.push({id:prod.id,nombre:prod.nombre,precio:prod.precio,stock:prod.stock,cant:nueva});
-          saveCart();
-          renderCarrito();
-          alerta(`Agregado: ${prod.nombre}`);
-        })
-        .catch(()=>alerta('Error de red','err'));
-    }
-
-    function cambiarCant(id,delta){
-      const it = carrito.find(i=>i.id===id);
-      if(!it) return;
-      it.cant = Math.max(1, Math.min(it.stock, it.cant + delta));
-      saveCart();
-      renderCarrito();
-    }
-
-    function eliminarItem(id){
-      carrito = carrito.filter(i=>i.id!==id);
-      saveCart();
-      renderCarrito();
-    }
-
-    function renderCarrito(){
-      const c = document.getElementById('cart');
-      if(!carrito.length){
-        c.classList.add('cart-empty');
-        c.innerHTML = 'Vacío';
-        document.getElementById('total').textContent='$0';
-        return;
-      }
-      c.classList.remove('cart-empty');
-      c.innerHTML = carrito.map(i=>`
-        <div class="carrito-item">
-          <div>${i.nombre}</div>
-          <div class="carrito-qty">
-            <button class="qtybtn" data-act="menos" data-id="${i.id}">−</button>
-            <div>${i.cant}</div>
-            <button class="qtybtn" data-act="mas" data-id="${i.id}">+</button>
-          </div>
-          <div>
-            $${fmt(i.precio*i.cant)}
-            <button class="qtybtn" style="margin-left:8px;background:#eee;color:#000" data-act="del" data-id="${i.id}" title="Quitar">✕</button>
-          </div>
-        </div>`).join('');
-
-      c.querySelectorAll('button[data-act]').forEach(b=>{
-        const id = Number(b.dataset.id);
-        const act = b.dataset.act;
-        b.onclick = ()=>{
-          if(act==='menos') cambiarCant(id,-1);
-          if(act==='mas')   cambiarCant(id, 1);
-          if(act==='del')   eliminarItem(id);
-        };
-      });
-
-      const total = carrito.reduce((s,i)=>s+i.precio*i.cant,0);
-      document.getElementById('total').textContent = '$'+fmt(total);
-    }
-
-    async function pagar(){
-      if(!carrito.length){alerta('Carrito vacío','err');return;}
-      try{
-        // Realiza compras una por una (simple). Puedes cambiar a /checkout si lo tienes listo.
-        for(const i of carrito){
-          const resp = await fetch(`${API_BASE}/compras`,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({producto_id:i.id,cantidad:i.cant})
-          });
-          if(!resp.ok){
-            const j = await resp.json().catch(()=>({}));
-            throw new Error(j.detail || 'Error en compra');
-          }
-        }
-        carrito = [];
-        saveCart();
-        renderCarrito();
-        alerta('Compra realizada ✅');
-        cargarProductos();
-      }catch(e){
-        alerta(e.message || 'Error en compra','err');
-      }
-    }
-
-    // ====== Eventos ======
-    document.getElementById('buscar').onclick = cargarProductos;
-    document.getElementById('catSel').onchange = cargarProductos;
-    document.getElementById('q').addEventListener('keydown', e=>{
-      if(e.key==='Enter') cargarProductos();
-    });
-    document.getElementById('vaciar').onclick = ()=>{carrito=[];saveCart();renderCarrito();};
-    document.getElementById('pagar').onclick = pagar;
-
-    // ====== Init ======
-    renderCarrito();
-    cargarCategorias().then(cargarProductos);
-  </script>
+  <!-- Punto de entrada (módulos) -->
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

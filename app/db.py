@@ -1,49 +1,57 @@
-import os, pymysql
+import os
+import pymysql
+from pymysql.cursors import DictCursor
+from pymysql.err import MySQLError, OperationalError, IntegrityError, ProgrammingError
 from dotenv import load_dotenv
+from typing import Optional
+
+# Carga variables .env (VM1)
+# Espera: DB_HOST, DB_USER, DB_PASS, DB_NAME
 load_dotenv()
-def get_conn():
+
+DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
+DB_USER = os.getenv("DB_USER", "root")
+DB_PASS = os.getenv("DB_PASS", "")
+DB_NAME = os.getenv("DB_NAME", "tienda")
+
+def get_conn() -> pymysql.connections.Connection:
+    """
+    Abre una conexión nueva a MySQL (VM2) usando PyMySQL.
+    - DictCursor para resultados tipo dict.
+    - Charset/Collation en utf8mb4.
+    - Timeouts para evitar cuelgues.
+    - autocommit=False para transacciones explícitas.
+    """
     return pymysql.connect(
-        host=os.getenv("DB_HOST","127.0.0.1"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASS"),
-        database=os.getenv("DB_NAME"),
-        cursorclass=pymysql.cursors.DictCursor,
-        autocommit=True
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASS,
+        database=DB_NAME,
+        cursorclass=DictCursor,
+        charset="utf8mb4",
+        autocommit=False,
+        read_timeout=10,
+        write_timeout=10,
+        connect_timeout=5,
     )
-def listar_productos(conn, cat=None, q=None, page=1, size=12):
-    where = []
-    params = []
-    if cat:
-        where.append("categoria = %s")
-        params.append(cat)
-    if q:
-        where.append("(nombre LIKE %s OR descripcion LIKE %s)")
-        like = f"%{q}%"
-        params.extend([like, like])
 
-    where_sql = f"WHERE {' AND '.join(where)}" if where else ""
-    offset = (page - 1) * size
+def schema_has(conn, table: str, column: str, database: Optional[str] = None) -> bool:
+    """
+    Devuelve True si la columna existe en la tabla (para soportar esquemas mínimos/extendidos).
+    """
+    db = database or DB_NAME
+    sql = """
+        SELECT 1
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA=%s AND TABLE_NAME=%s AND COLUMN_NAME=%s
+        LIMIT 1
+    """
+    with conn.cursor() as c:
+        c.execute(sql, (db, table, column))
+        return c.fetchone() is not None
 
-    with conn.cursor() as cur:
-        # total
-        cur.execute(f"SELECT COUNT(*) FROM productos {where_sql}", params)
-        total = cur.fetchone()[0]
-
-        # datos
-        cur.execute(
-            f"""SELECT id, nombre, precio, stock, categoria, imagen_url, descripcion
-                FROM productos {where_sql}
-                ORDER BY id
-                LIMIT %s OFFSET %s""",
-            params + [size, offset]
-        )
-        rows = cur.fetchall()
-
-    items = [
-        dict(
-            id=r[0], nombre=r[1], precio=float(r[2]), stock=r[3],
-            categoria=r[4], imagen_url=r[5], descripcion=r[6]
-        )
-        for r in rows
-    ]
-    return {"page": page, "size": size, "total": total, "items": items}
+# Exponer errores específicos por conveniencia en routes
+DBError = MySQLError
+DBOperationalError = OperationalError
+DBIntegrityError = IntegrityError
+DBProgrammingError = ProgrammingError
