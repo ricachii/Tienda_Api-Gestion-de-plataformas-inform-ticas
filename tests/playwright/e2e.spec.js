@@ -10,6 +10,11 @@ test('register -> login -> add to cart -> checkout flow', async ({ page }) => {
   // Open auth modal and register
   await page.click('#btnLogin');
   await expect(page.locator('#ovAuth')).toBeVisible();
+  // Ensure modal inputs are visible before filling to avoid timing flakes
+  await page.waitForSelector('#authEmail', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('#authPass', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('#authName', { state: 'visible', timeout: 10000 });
+
   const email = `e2e+${rnd()}@example.com`;
   const name = `E2E ${rnd()}`;
   await page.fill('#authEmail', email);
