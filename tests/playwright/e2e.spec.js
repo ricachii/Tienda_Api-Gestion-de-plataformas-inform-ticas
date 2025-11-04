@@ -4,7 +4,8 @@ function rnd() { return Math.random().toString(36).slice(2,9); }
 
 test('register -> login -> add to cart -> checkout flow', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
-  await expect(page.locator('text=VitaZone')).toBeVisible();
+  // ensure page loads - check main heading to avoid matching footer text
+  await expect(page.locator('h1')).toBeVisible();
 
   // Open auth modal and register
   await page.click('#btnLogin');

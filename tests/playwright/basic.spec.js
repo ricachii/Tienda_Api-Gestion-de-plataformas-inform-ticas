@@ -2,8 +2,8 @@ const { test, expect } = require('@playwright/test');
 
 test('shortcuts and modal focus trap', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
-  // ensure page loads
-  await expect(page.locator('text=VitaZone')).toBeVisible();
+  // ensure page loads - check main heading to avoid matching footer text
+  await expect(page.locator('h1')).toBeVisible();
 
   // shortcut '/' focuses search
   await page.keyboard.press('/');
