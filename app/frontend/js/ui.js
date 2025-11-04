@@ -38,10 +38,8 @@ function imageHtml(src, alt){
   const escAlt = String(alt||'').replace(/"/g,'&quot;');
   // If src provided, include lazy loading, width/height attributes via CSS aspect-ratio,
   // and a small inline SVG placeholder to avoid CLS while loading.
-  const placeholder = `data:image/svg+xml;utf8,${encodeURIComponent(`
-    <svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'>
-      <rect width='100%' height='100%' fill='%23f9fafb'/>
-    </svg>`)};`;
+  const _svg = "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'><rect width='100%' height='100%' fill='%23f9fafb'/></svg>";
+  const placeholder = 'data:image/svg+xml;utf8,' + encodeURIComponent(_svg);
   return safeSrc
     ? `<img loading="lazy" src="${placeholder}" data-src="${safeSrc}" alt="${escAlt}" class="lazyimg"
          onload="if(this.dataset.src){this.src=this.dataset.src;delete this.dataset.src}"
@@ -56,10 +54,8 @@ export function renderGrid(items, {append=false} = {}){
   const html = (items||[]).map(p=>{
     // build image HTML with placeholder + data-src / data-srcset to avoid CLS
     const escAlt = String(p.nombre||'').replace(/"/g,'&quot;');
-    const placeholder = `data:image/svg+xml;utf8,${encodeURIComponent(`
-      <svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'>
-        <rect width='100%' height='100%' fill='%23f9fafb'/>
-      </svg>`)};`;
+    const _svg = "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'><rect width='100%' height='100%' fill='%23f9fafb'/></svg>";
+    const placeholder = 'data:image/svg+xml;utf8,' + encodeURIComponent(_svg);
     let imgAttrs = `loading="lazy" src="${placeholder}" alt="${escAlt}" class="lazyimg"`;
     if(p.imagen_url) imgAttrs += ` data-src="${p.imagen_url}"`;
     if(p.imagen_srcset) imgAttrs += ` data-srcset="${p.imagen_srcset}"`;
@@ -81,7 +77,7 @@ export function renderGrid(items, {append=false} = {}){
         <div class="stock">${(p.stock ?? 0) > 0 ? `Stock: ${p.stock}` : 'Sin stock'}</div>
       </div>
     </div>
-  `).join('');
+  `; }).join('');
   if(append) cont.insertAdjacentHTML('beforeend', html);
   else cont.innerHTML = html;
 }
