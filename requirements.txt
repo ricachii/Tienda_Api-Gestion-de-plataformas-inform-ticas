@@ -19,3 +19,6 @@ uvloop==0.22.1
 watchfiles==1.1.1
 websockets==15.0.1
 pydantic[email]
+passlib[bcrypt]
+python-jose[cryptography]
+PyJWT>=2.8.0

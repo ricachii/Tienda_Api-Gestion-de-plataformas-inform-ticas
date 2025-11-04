@@ -1,0 +1,16 @@
+[Unit]
+Description=Tienda API (FastAPI uvicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=rikashii
+WorkingDirectory=/home/rikashii/tienda-api
+EnvironmentFile=/home/rikashii/tienda-api/app/.env
+ExecStart=/home/rikashii/tienda-api/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
