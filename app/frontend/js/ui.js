@@ -1,22 +1,38 @@
-//Funciones de interfaz (modales, alertas, render)
-
 // app/frontend/js/ui.js
+// Funciones de interfaz (modales, alertas, render)
 import { carrito, totals } from './cart.js';
 
 export const CLP = new Intl.NumberFormat('es-CL', { style:'currency', currency:'CLP', maximumFractionDigits:0 });
 export const fmt = n => CLP.format(Number(n || 0));
 export const byId = id => document.getElementById(id);
 
+/* Alertas flotantes */
 export function alerta(msg, type='ok'){
   const el = document.createElement('div');
   el.className = 'alert';
   el.style.borderColor = type==='err' ? '#f87171' : (type==='warn' ? '#fbbf24' : '#4ade80');
   el.textContent = msg;
+  // accesibilidad: anunciar cambios y marcar rol
+  el.setAttribute('role', type==='err' ? 'alert' : 'status');
+  el.setAttribute('aria-live', type==='err' ? 'assertive' : 'polite');
   document.body.appendChild(el);
   setTimeout(()=> el.remove(), 2400);
 }
 
-// Imagen con fallback accesible
+/* Loading skeleton */
+export function showLoading(){ const s=byId('loading'); if(s){ s.style.display='grid'; s.setAttribute('aria-hidden','false'); } }
+export function hideLoading(){ const s=byId('loading'); if(s){ s.style.display='none'; s.setAttribute('aria-hidden','true'); } }
+
+/* Footer de lista (paginación) */
+export function updateListFooter({visible=false, canLoadMore=false}={}){
+  const foot = byId('listFooter'); const btn = byId('loadMore'); const end = byId('endMsg');
+  if(!foot || !btn || !end) return;
+  foot.style.display = visible ? 'flex' : 'none';
+  btn.style.display = canLoadMore ? '' : 'none';
+  end.style.display = (!canLoadMore && visible) ? '' : 'none';
+}
+
+/* Imagen con fallback accesible */
 function imageHtml(src, alt){
   const safeSrc = src || '';
   const escAlt = String(alt||'').replace(/"/g,'&quot;');
@@ -26,10 +42,10 @@ function imageHtml(src, alt){
     : `<div class="ph" role="img" aria-label="Sin imagen">Imagen</div>`;
 }
 
-// === Productos (catálogo) ===
-export function renderGrid(items){
+/* === Productos (catálogo) === */
+export function renderGrid(items, {append=false} = {}){
   const cont = byId('productos');
-  cont.innerHTML = (items||[]).map(p=>`
+  const html = (items||[]).map(p=>`
     <div class="card" data-id="${p.id}" data-stock="${p.stock ?? 0}">
       <div class="imgwrap">${imageHtml(p.imagen_url, p.nombre)}</div>
       <div class="cnt">
@@ -44,9 +60,11 @@ export function renderGrid(items){
       </div>
     </div>
   `).join('');
+  if(append) cont.insertAdjacentHTML('beforeend', html);
+  else cont.innerHTML = html;
 }
 
-// === Carrito (aside) ===
+/* === Carrito (aside) === */
 export function renderCart(){
   const c = byId('cart');
   if(!carrito.length){
@@ -83,4 +101,6 @@ export function renderTotals(){
   byId('ship').textContent = fmt(ship);
   byId('disc').textContent = disc ? `− ${fmt(disc)}` : fmt(0);
   byId('total').textContent = fmt(total);
+
 }
+

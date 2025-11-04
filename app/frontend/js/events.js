@@ -1,16 +1,38 @@
-//Listeners y eventos de botones
 
 
 // app/frontend/js/events.js
-import { getCategorias, getProductos, postCheckout, postCompra, API_BASE } from './api.js';
-import { renderGrid, renderCart, byId, alerta, fmt } from './ui.js';
+// Listeners y flujo principal del frontend (sin frameworks)
+import {
+  initApiBase, getCategorias, getProductos, postCheckout, postCompra, API_BASE,
+  apiLogin, apiRegister, apiMe, loadAuth, saveAuth, clearAuth
+} from './api.js';
+import { renderGrid, renderCart, byId, alerta, fmt, showLoading, hideLoading, updateListFooter } from './ui.js';
 import { carrito, addItem, removeItem, changeQty, clearCart, totals } from './cart.js';
+
+/* Estado de la lista/paginación */
+let state = {
+  page: 1,
+  size: 12,
+  q: '',
+  cat: '',
+  total_pages: 1,
+  loading: false,
+};
+
+/* Debounce simple para la búsqueda */
+function debounce(fn, ms=450){
+  let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); };
+}
 
 export function initApp(){
   // Búsqueda y filtros
-  byId('buscar').onclick = ()=> loadProducts(true);
-  byId('catSel').onchange = ()=> loadProducts(true);
-  byId('q').addEventListener('keydown', e=>{ if(e.key==='Enter') loadProducts(true); });
+  byId('buscar').onclick = ()=> reloadProducts();
+  byId('catSel').onchange = ()=> { state.cat = byId('catSel').value; persistFilters(); reloadProducts(); };
+  byId('q').addEventListener('keydown', e=>{ if(e.key==='Enter') reloadProducts(); });
+  byId('q').addEventListener('input', debounce(()=>{ state.q = byId('q').value.trim(); persistFilters(); reloadProducts(); }, 500));
+
+  // Cargar más
+  byId('loadMore').onclick = ()=> loadMore();
 
   // Carrito
   byId('vaciar').onclick = ()=>{ clearCart(); renderCart(); };
@@ -29,42 +51,157 @@ export function initApp(){
 
   // Resumen y pago
   byId('resumen').onclick = openSummary;
-  byId('pagar').onclick   = openSummary;   // obligamos pasar por resumen
+  byId('pagar').onclick   = openSummary;
   byId('btnConfirmarResumen').onclick = pay;
   document.querySelectorAll('[data-close]').forEach(b=>{
     b.addEventListener('click', ()=> closeOverlay(b.getAttribute('data-close')) );
   });
   byId('btnSeguir').onclick = ()=> closeOverlay('ovDone');
 
-  // Info API
-  byId('apiBase').textContent = API_BASE;
+  // Auth UI
+  byId('btnLogin').onclick = ()=> openOverlay('ovAuth');
+  byId('btnLogout').onclick = doLogout;
+  byId('btnDoLogin').onclick = doLogin;
+  byId('btnDoRegister').onclick = doRegister;
 
-  // ESC cierra modales
-  window.addEventListener('keydown', e=>{
-    if(e.key==='Escape'){ closeOverlay('ovSummary'); closeOverlay('ovDone'); }
-  });
+  // Conectividad
+  syncOfflineBanner();
+  window.addEventListener('online', syncOfflineBanner);
+  window.addEventListener('offline', syncOfflineBanner);
 
+  // Arranque
   renderCart();
   boot();
 }
 
 async function boot(){
+  await initApiBase();
+  byId('apiBase').textContent = API_BASE;
+
   try{
     const cats = await getCategorias();
     byId('catSel').innerHTML = '<option value="">Todas</option>' + (cats||[]).map(c=>`<option>${c}</option>`).join('');
   }catch{}
-  await loadProducts(true);
+
+  restoreFilters();
+
+  // Cargar auth previa (si existe) y poblar /me (opcional)
+  const auth = loadAuth();
+  if (auth?.token) {
+    try {
+      const me = await apiMe();
+      saveAuth({ user: me });
+      renderSession();
+    } catch {
+      // token inválido
+      doLogout(true);
+    }
+  } else {
+    renderSession();
+  }
+
+  await reloadProducts();
 }
 
-async function loadProducts(reset=false){
-  try{
-    const q = byId('q').value.trim();
-    const cat = byId('catSel').value;
-    const {items=[]} = await getProductos(1,12,q,cat);
-    renderGrid(items);
+function renderSession(){
+  const who = byId('whoami');
+  const btnIn = byId('btnLogin');
+  const btnOut = byId('btnLogout');
+  const auth = loadAuth();
 
-    // Botón "Agregar" en cada card
+  if (auth?.user?.nombre || auth?.user?.email) {
+    who.textContent = auth.user.nombre ? `${auth.user.nombre}` : auth.user.email;
+    btnIn.style.display = 'none';
+    btnOut.style.display = '';
+  } else {
+    who.textContent = 'Invitado';
+    btnIn.style.display = '';
+    btnOut.style.display = 'none';
+  }
+}
+
+async function doLogin(){
+  const email = byId('authEmail').value.trim();
+  const password = byId('authPass').value;
+  const err = byId('authErr');
+
+  err.style.display='none'; err.textContent='';
+
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){
+    err.textContent = 'Email inválido.'; err.style.display=''; return;
+  }
+  if(!password || password.length<4){
+    err.textContent = 'Contraseña demasiado corta.'; err.style.display=''; return;
+  }
+
+  try{
+    const res = await apiLogin({ email, password }); // { access_token, token_type, expires_in? }
+    const exp = res?.expires_in ? Date.now() + Number(res.expires_in)*1000 : null;
+    saveAuth({ token: res.access_token, exp });
+
+    const me = await apiMe(); // carga perfil + rol
+    saveAuth({ user: me });
+
+    alerta('Sesión iniciada');
+    closeOverlay('ovAuth');
+    renderSession();
+  }catch(e){
+    err.textContent = e.message || 'No fue posible iniciar sesión.';
+    err.style.display=''; 
+  }
+}
+
+async function doRegister(){
+  const email = byId('authEmail').value.trim();
+  const password = byId('authPass').value;
+  const nombre = byId('authName').value.trim();
+  const err = byId('authErr');
+
+  err.style.display='none'; err.textContent='';
+
+  if(!nombre || nombre.length<2){ err.textContent='Ingresa tu nombre.'; err.style.display=''; return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ err.textContent='Email inválido.'; err.style.display=''; return; }
+  if(!password || password.length<6){ err.textContent='Usa al menos 6 caracteres.'; err.style.display=''; return; }
+
+  try{
+    await apiRegister({ email, nombre, password });
+    alerta('Registro exitoso. Ahora inicia sesión.');
+  }catch(e){
+    err.textContent = e.message || 'No fue posible registrar.';
+    err.style.display='';
+  }
+}
+
+function doLogout(silent=false){
+  clearAuth();
+  renderSession();
+  if(!silent) alerta('Sesión cerrada');
+}
+
+/* ===== helpers UI ya existentes ===== */
+function persistFilters(){ localStorage.setItem('filters', JSON.stringify({ q: state.q, cat: state.cat })); }
+function restoreFilters(){
+  const f = JSON.parse(localStorage.getItem('filters')||'{}');
+  if(f.q) { state.q = f.q; byId('q').value = f.q; }
+  if(f.cat){ state.cat = f.cat; byId('catSel').value = f.cat; }
+}
+
+async function reloadProducts(){ state.page = 1; await loadProducts({ reset:true }); }
+async function loadMore(){ if(state.loading) return; if(state.page >= state.total_pages) return; state.page += 1; await loadProducts({ reset:false }); }
+
+async function loadProducts({reset=false}={}){
+  state.loading = true;
+  showLoading();
+  updateListFooter({visible:false});
+  try{
+    const data = await getProductos(state.page, state.size, state.q, state.cat);
+    state.total_pages = data.total_pages || 1;
+    const items = data.items || [];
+    renderGrid(items, {append: !reset});
+
     document.querySelectorAll('.card .addbtn').forEach(btn=>{
+      if(btn._wired) return;
+      btn._wired = true;
       btn.onclick = ()=>{
         const card = btn.closest('.card');
         const id = +card.dataset.id;
@@ -78,13 +215,60 @@ async function loadProducts(reset=false){
       };
     });
 
+    const canLoadMore = state.page < state.total_pages;
+    updateListFooter({visible: state.total_pages>1 || items.length>0, canLoadMore});
+    if(reset && (!items.length)) alerta('Sin resultados para tu búsqueda','warn');
   }catch(e){ alerta(e.message||'Error al cargar','err'); }
+  finally{ hideLoading(); state.loading = false; }
 }
 
-/* ====== Modales ====== */
-function openOverlay(id){ const ov = document.getElementById(id); if(ov) ov.style.display='flex'; }
-function closeOverlay(id){ const ov = document.getElementById(id); if(ov) ov.style.display='none'; }
+/* Modales */
+function openOverlay(id){
+  const ov = document.getElementById(id);
+  if(!ov) return;
+  // show
+  ov.style.display='flex';
+  ov.removeAttribute('aria-hidden');
+  // remember previously focused element to restore later
+  ov._previousActive = document.activeElement;
 
+  // focus first focusable element inside modal
+  const focusable = ov.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  if(focusable && focusable.length) focusable[0].focus();
+
+  // key handler for ESC and Tab trapping
+  const keyHandler = (e)=>{
+    if(e.key === 'Escape') { closeOverlay(id); }
+    if(e.key === 'Tab'){
+      const foc = Array.from(focusable).filter(el=> !el.hasAttribute('disabled') && el.offsetParent!==null);
+      if(!foc.length) return;
+      const first = foc[0], last = foc[foc.length-1];
+      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  };
+  ov._keyHandler = keyHandler;
+  document.addEventListener('keydown', keyHandler);
+
+  // close when clicking on backdrop
+  const clickHandler = (ev)=>{ if(ev.target === ov) closeOverlay(id); };
+  ov._clickHandler = clickHandler;
+  ov.addEventListener('click', clickHandler);
+}
+
+function closeOverlay(id){
+  const ov = document.getElementById(id);
+  if(!ov) return;
+  ov.style.display='none';
+  ov.setAttribute('aria-hidden','true');
+  // remove handlers
+  if(ov._keyHandler) document.removeEventListener('keydown', ov._keyHandler);
+  if(ov._clickHandler) ov.removeEventListener('click', ov._clickHandler);
+  // restore focus
+  try{ if(ov._previousActive) ov._previousActive.focus(); }catch{}
+}
+
+/* Pago */
 function openSummary(){
   const empty  = byId('sumEmpty');
   const content= byId('sumContent');
@@ -114,7 +298,6 @@ function openSummary(){
   openOverlay('ovSummary');
 }
 
-/* ====== Pago ====== */
 async function pay(){
   if(!carrito.length){ alerta('Carrito vacío','err'); return; }
   const err = byId('sumErr'); err.textContent=''; err.style.display='none';
@@ -122,17 +305,9 @@ async function pay(){
   const nombre = byId('inpNombre').value.trim();
   const email  = byId('inpEmail').value.trim();
 
-  // Validaciones (tu backend las requiere)
-  if(nombre.length < 2){
-    err.textContent = 'Ingresa tu nombre (mínimo 2 caracteres).';
-    err.style.display=''; byId('inpNombre').focus(); return;
-  }
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){
-    err.textContent = 'Ingresa un email válido.';
-    err.style.display=''; byId('inpEmail').focus(); return;
-  }
+  if(nombre.length < 2){ err.textContent = 'Ingresa tu nombre.'; err.style.display=''; byId('inpNombre').focus(); return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ err.textContent = 'Ingresa un email válido.'; err.style.display=''; byId('inpEmail').focus(); return; }
 
-  // Guarda temporalmente por si falla el pago
   localStorage.setItem('cliente', JSON.stringify({ nombre, email }));
 
   const items = carrito.map(i=>({ producto_id:i.id, cantidad:i.cant }));
@@ -141,51 +316,39 @@ async function pay(){
   btnPay.disabled = true; btnPay.textContent='Procesando…';
 
   try{
-    // Preferimos /checkout (envía también "cliente" por compatibilidad)
-    await postCheckout({
-      items,
-      customer_name: nombre,
-      customer_email: email,
-      cliente: { nombre, email }
-    });
+    await postCheckout({ items, customer_name:nombre, customer_email:email, cliente:{nombre,email} });
   }catch(e){
-    // Fallback a /compras si /checkout no existe
     if(/404|405|no permitida|no encontrado/i.test(e.message)){
       for(const it of items){ await postCompra(it.producto_id, it.cantidad); }
     }else{
-      err.textContent = e.message || 'Error al pagar';
-      err.style.display = '';
-      return;
+      err.textContent = e.message || 'Error al pagar'; err.style.display=''; return;
     }
   }finally{
     btnConfirm.disabled = false; btnConfirm.textContent='Confirmar y pagar';
     btnPay.disabled = false; btnPay.textContent='Pagar';
   }
 
-  // ===== ÉXITO =====
   const total = totals().total;
   const copy = carrito.map(i=>({...i}));
-
-  // 1) limpiar carrito y totales
   clearCart(); renderCart();
+  await reloadProducts();
 
-  // 2) refrescar catálogo desde la API para ver el stock actualizado
-  await loadProducts(true);
-
-  // 3) limpiar datos de cliente (para que no queden prellenados)
   localStorage.removeItem('cliente');
   byId('inpNombre').value = '';
   byId('inpEmail').value  = '';
 
-  // 4) boleta
   byId('doneOrder').textContent = '—';
   byId('doneTotal').textContent = fmt(total);
   byId('doneItems').innerHTML = copy.map(it =>
     `<div class="rline"><span>${it.nombre} × ${it.cant}</span><strong>${fmt(it.precio*it.cant)}</strong></div>`
   ).join('');
 
-  // cerrar/abrir modales
   closeOverlay('ovSummary');
   openOverlay('ovDone');
 }
 
+/* Conectividad */
+function syncOfflineBanner(){
+  if(navigator.onLine) document.body.classList.remove('offline');
+  else document.body.classList.add('offline');
+}
