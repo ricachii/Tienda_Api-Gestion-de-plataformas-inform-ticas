@@ -45,7 +45,9 @@ jobs:
           node-version: '18'
 
       - name: Install Node dependencies
-        run: npm ci
+        run: |
+          # prefer reproducible install with package-lock.json, but fall back to npm install
+          npm ci || npm install
 
       - name: Build frontend
         run: npm run build
