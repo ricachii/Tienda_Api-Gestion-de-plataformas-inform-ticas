@@ -11,6 +11,7 @@ on:
       - 'app/frontend/**'
       - 'package.json'
       - 'build.js'
+  workflow_dispatch: {}
 
 jobs:
   build-and-test:
