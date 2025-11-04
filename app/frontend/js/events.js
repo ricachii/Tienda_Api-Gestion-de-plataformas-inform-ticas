@@ -74,6 +74,34 @@ export function initApp(){
   boot();
 }
 
+  
+  // Keyboard shortcuts: '/' focus search, 'c' open resumen/carrito, 's' open summary
+  function globalShortcuts(e){
+    const tag = (document.activeElement && document.activeElement.tagName||'').toLowerCase();
+    if(tag === 'input' || tag === 'textarea' || document.activeElement?.isContentEditable) return;
+    if(e.key === '/'){
+      const q = byId('q'); if(q){ e.preventDefault(); q.focus(); q.select(); }
+    }
+    if(e.key === 'c'){
+      // abrir resumen/carrito
+      openSummary();
+    }
+    if(e.key === 's'){
+      openSummary();
+    }
+  }
+  
+  // global shortcuts
+  document.addEventListener('keydown', globalShortcuts);
+  
+  // menu toggle (small screens)
+  const mt = byId('menuToggle'); if(mt){
+    mt.addEventListener('click', ()=>{
+      const hdr = document.querySelector('header');
+      const open = hdr.classList.toggle('toolbar-open');
+      mt.setAttribute('aria-expanded', String(open));
+    });
+  }
 async function boot(){
   await initApiBase();
   byId('apiBase').textContent = API_BASE;

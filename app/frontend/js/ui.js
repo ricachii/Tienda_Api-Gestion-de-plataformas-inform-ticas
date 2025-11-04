@@ -45,8 +45,9 @@ function imageHtml(src, alt){
 /* === Productos (catálogo) === */
 export function renderGrid(items, {append=false} = {}){
   const cont = byId('productos');
+  if(cont) cont.setAttribute('role','list');
   const html = (items||[]).map(p=>`
-    <div class="card" data-id="${p.id}" data-stock="${p.stock ?? 0}">
+    <div class="card" role="listitem" aria-label="${(p.nombre||'Producto').replace(/"/g,'') }" data-id="${p.id}" data-stock="${p.stock ?? 0}">
       <div class="imgwrap">${imageHtml(p.imagen_url, p.nombre)}</div>
       <div class="cnt">
         <div class="cat">${p.categoria || ''}</div>

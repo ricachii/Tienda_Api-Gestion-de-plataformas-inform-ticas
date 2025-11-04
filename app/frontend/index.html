@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <a class="skip-link" href="#productos">Saltar al contenido</a>
   <header>
     <div class="brand"><h1>💊 VitaZone • Tienda</h1></div>
     <div class="toolbar">
@@ -17,15 +18,25 @@
         <button id="buscar" aria-label="Buscar">Buscar</button>
       </div>
       <select id="catSel" aria-label="Filtrar por categoría"><option value="">Todas</option></select>
+
       <a class="link" href="/docs" target="_blank" rel="noopener">Swagger</a>
       <a class="link" href="/redoc" target="_blank" rel="noopener">ReDoc</a>
+
       <div class="cart-pill" title="Ítems en el carrito">
         <span>🛒</span><span id="cartCount" class="badge">0</span>
       </div>
+
+      <!-- Cuenta / sesión -->
+      <div class="cart-pill" title="Cuenta">
+        <span id="whoami" class="muted">Invitado</span>
+        <button id="btnLogin" class="ghost ml8">Iniciar sesión</button>
+        <button id="btnLogout" class="ghost ml8" style="display:none">Salir</button>
+      </div>
     </div>
+    <button id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="toolbar">☰<span class="sr-only">Abrir menú</span></button>
   </header>
 
-  <main>
+  <main role="main">
     <section>
       <div id="alertas" aria-live="polite" class="sr-only"></div>
 
@@ -42,7 +53,7 @@
       </div>
     </section>
 
-    <aside>
+  <aside role="complementary" aria-label="Carrito">
       <h3 style="margin:6px 0 4px">🛒 Carrito</h3>
       <div id="cart" class="cart-empty" aria-live="polite">Vacío</div>
 
@@ -121,7 +132,42 @@
     </div>
   </div>
 
-  <!-- Punto de entrada (módulos) -->
+  <!-- ===== Modal Autenticación ===== -->
+  <div id="ovAuth" class="overlay" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="modal" role="document">
+      <header>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <h3 id="authTitle" style="margin:0">🔐 Acceso</h3>
+          <button class="x" data-close="ovAuth" aria-label="Cerrar">✕</button>
+        </div>
+      </header>
+      <div class="content">
+        <div class="field">
+          <label for="authEmail">Email</label>
+          <input id="authEmail" type="email" placeholder="tu@correo.com" autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="authPass">Contraseña</label>
+          <input id="authPass" type="password" placeholder="********" autocomplete="current-password">
+        </div>
+
+        <details style="margin-top:8px">
+          <summary>¿No tienes cuenta? Registrar</summary>
+          <div class="field" style="margin-top:8px">
+            <label for="authName">Nombre</label>
+            <input id="authName" type="text" placeholder="Nombre y apellido" autocomplete="name">
+          </div>
+        </details>
+
+        <p id="authErr" class="errtxt" style="display:none"></p>
+      </div>
+      <div class="actions">
+        <button class="ghost" id="btnDoRegister">Registrar</button>
+        <button id="btnDoLogin">Iniciar sesión</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

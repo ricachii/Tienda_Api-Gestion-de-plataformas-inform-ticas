@@ -1,15 +1,31 @@
-/* Estilos (colores, layout, modales) */
-
 :root{
   --bg:#f7f7fb;--card:#fff;--prim:#4f46e5;--prim-2:#6366f1;--bd:#e5e7eb;
-  --ok:#16a34a;--err:#b91c1c;--txt:#111;--muted:#666;--chip:#eef2ff;
-  --ink:#0f172a;--warn:#d97706;
+  --ok:#16a34a;--err:#b91c1c;--txt:#111;--muted:#666;--chip:#eef2ff;--ink:#0f172a;--warn:#d97706;
+}
+/* Skip-link visible on focus for keyboard users */
+.skip-link{position:absolute;left:8px;top:8px;background:#111;color:#fff;padding:8px 10px;border-radius:6px;z-index:60;transform:translateY(-200%);transition:transform .12s}
+.skip-link:focus{transform:translateY(0)}
+
+/* small utility */
+.ml8{margin-left:8px}
+
+/* Menu toggle for small screens */
+.menu-toggle{display:none;border:none;background:transparent;font-size:1.1rem;padding:8px;border-radius:8px}
+
+@media(max-width:700px){
+  .menu-toggle{display:block}
+  .toolbar{display:none;flex-direction:column;gap:6px;width:100%}
+  header.toolbar-open .toolbar{display:flex}
+  input[type="search"]{min-width:120px}
+  .brand h1{font-size:1rem}
+  main{padding:0 12px}
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);font-family:Inter,system-ui,Arial,sans-serif;color:var(--txt);-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--prim);outline-offset:2px;border-radius:8px}
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible{box-shadow:0 0 0 3px rgba(99,102,241,.25)}
 
-/* Header / toolbar */
 header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--bd);
   padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;z-index:20}
 .brand{display:flex;align-items:center;gap:8px}
@@ -25,15 +41,16 @@ button:disabled{opacity:.55;cursor:not-allowed}
 a.link{background:var(--chip);color:var(--prim);border:1px solid #dbe3ff;text-decoration:none;border-radius:10px;padding:9px 12px}
 .badge{display:inline-grid;place-items:center;min-width:20px;height:20px;font-size:.75rem;color:#fff;background:#ef4444;border-radius:999px;padding:0 6px;line-height:1}
 .cart-pill{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid var(--bd);background:#fff}
+.authbox{display:flex;gap:8px;align-items:center}
+.authinfo{display:flex;gap:8px;align-items:center}
+.rolechip{font-size:.78rem;background:#e0f2fe;color:#0369a1;padding:3px 10px;border-radius:20px}
 .muted{color:var(--muted);font-size:.9rem}
 
-/* Layout */
 main{max-width:1260px;margin:18px auto;display:grid;grid-template-columns:1fr 380px;gap:22px;padding:0 16px}
 @media(max-width:1000px){main{grid-template-columns:1fr}}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
 footer{text-align:center;margin:28px 0;color:var(--muted);font-size:.9rem}
 
-/* Product card */
 .card{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.06);
   display:flex;flex-direction:column;transition:transform .15s}
 .card:hover{transform:translateY(-3px)}
@@ -43,70 +60,53 @@ footer{text-align:center;margin:28px 0;color:var(--muted);font-size:.9rem}
 .desc{color:var(--muted);font-size:.9rem;min-height:34px}
 .price{font-weight:800;margin:8px 0 4px;font-size:1rem}
 .row{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
-.qtybtn{background:var(--prim);color:#fff;min-width:36px;height:36px;border-radius:10px;border:none;font-size:1.1rem;display:grid;place-items:center}
-.qty{width:68px;text-align:center;padding:8px;border-radius:10px;border:1px solid var(--bd)}
 .addbtn{flex:1;background:var(--prim);color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700}
 .addbtn:hover{background:var(--prim-2)}
 .stock{font-size:.85rem;color:var(--muted);margin-top:6px}
 
-/* Aside cart */
 aside{background:var(--card);border-radius:16px;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.06);position:sticky;top:76px;height:max-content}
 .cart-empty{color:var(--muted)}
 .carrito-item{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border-bottom:1px solid var(--bd);padding:8px 0}
-.carrito-qty{display:flex;gap:6px;align-items:center}
 .tot{display:flex;justify-content:space-between;font-weight:800;margin-top:12px}
 .subt{display:flex;justify-content:space-between;margin-top:8px}
 .foot-actions{display:flex;gap:8px;margin-top:10px}
 
-/* Loading / alerts */
-.alert{position:fixed;top:16px;right:16px;background:#fff;border:1px solid var(--bd);padding:10px 14px;
-  border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);animation:fade 2.4s forwards;max-width:70vw}
+.alert{position:fixed;top:16px;right:16px;background:#fff;border:1px solid var(--bd);padding:10px 14px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);animation:fade 2.4s forwards;max-width:70vw}
 @keyframes fade{0%{opacity:1}80%{opacity:1}100%{opacity:0}}
 .toolbar-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .load-skel{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
 .load-card{background:var(--card);border-radius:16px;overflow:hidden;height:330px;border:1px solid var(--bd)}
 .sr-only{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 
-/* Modales */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
 .modal{background:#fff;border-radius:16px;max-width:640px;width:100%;box-shadow:0 15px 40px rgba(0,0,0,.25);overflow:hidden}
-.modal header{position:relative;top:auto;background:#fff;border-bottom:1px solid var(--bd);padding:14px 16px}
+.modal header{background:#fff;border-bottom:1px solid var(--bd);padding:14px 16px}
 .modal .content{padding:16px}
 .modal .actions{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--bd);background:#fafafa}
 .x{appearance:none;background:#fff;border:1px solid var(--bd);width:36px;height:36px;border-radius:10px;cursor:pointer}
 .x:hover{background:#f3f4f6}
 .receipt{background:#fafafa;border:1px dashed var(--bd);padding:12px;border-radius:12px}
-.receipt h4{margin:0 0 8px 0}
 .receipt .rline{display:flex;justify-content:space-between;margin:6px 0}
 .field{display:flex;flex-direction:column;gap:6px}
 .field input{width:100%}
 .errtxt{color:var(--err);font-size:.9rem}
 .oktxt{color:var(--ok)}
-@media (prefers-reduced-motion: reduce){
-  html{scroll-behavior:auto}
-  .card{transition:none}
-}
 
-.card img {
-  width: 100%;
-  height: 200px;              /* 🔧 altura controlada */
-  object-fit: contain;        /* mantiene proporción natural */
-  display: block;
-  background: #f9fafb;        /* fondo neutro detrás de imágenes transparentes */
-  padding: 10px;              /* deja un margen interior */
-  border-radius: 10px;        /* bordes suaves */
-}
-.imgwrap {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #fff;
-  height: 220px;              /* contenedor fijo */
-  overflow: hidden;
-}
+.card img{width:100%;height:200px;object-fit:contain;display:block;background:#f9fafb;padding:10px;border-radius:10px}
+.imgwrap{display:flex;justify-content:center;align-items:center;background:#fff;height:220px;overflow:hidden}
+
 body.offline::before{
   content:"Sin conexión. Algunas acciones pueden fallar.";
-  position:fixed;left:0;right:0;top:0;z-index:60;
-  background:#fee2e2;color:#991b1b;padding:6px 12px;text-align:center;
-  font-size:.9rem;border-bottom:1px solid #fecaca;
+  position:fixed;left:0;right:0;top:0;z-index:60;background:#fee2e2;color:#991b1b;padding:6px 12px;text-align:center;font-size:.9rem;border-bottom:1px solid #fecaca;
 }
+
+/* Tabs Auth */
+.tabs{display:flex;gap:8px;margin-bottom:8px}
+.tab{background:#fff;color:#111;border:1px solid var(--bd);border-radius:10px;padding:8px 12px;cursor:pointer}
+.tab.active{background:var(--prim);color:#fff;border-color:var(--prim)}
+.authform{display:grid;gap:10px}
+.hrtitle{font-weight:700;margin:6px 0}
+.preout{background:#0b1020;color:#e2e8f0;border-radius:10px;padding:10px;max-height:240px;overflow:auto}
+
+/* Utilidades */
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.card{transition:none}}
