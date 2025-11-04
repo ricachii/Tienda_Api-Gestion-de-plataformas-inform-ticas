@@ -12,6 +12,10 @@ class Producto(BaseModel):
     stock: int
     categoria: Optional[str] = None
     imagen_url: Optional[str] = None
+    # Optional image metadata supplied by the API to improve frontend UX
+    imagen_srcset: Optional[str] = None
+    imagen_width: Optional[int] = None
+    imagen_height: Optional[int] = None
     descripcion: Optional[str] = None
 
 class ProductosResponse(BaseModel):

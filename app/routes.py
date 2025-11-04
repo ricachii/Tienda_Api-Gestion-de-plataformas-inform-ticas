@@ -275,8 +275,15 @@ def productos(page: int = Query(1, ge=1), size: int = Query(12, ge=1, le=100),
         select_cols = ["id", "nombre", "precio", "stock"]
         if has_categoria:
             select_cols.append("categoria")
+        # Image columns: imagen_url is common; optionally include imagen_srcset, imagen_width, imagen_height
         if schema_has("productos", "imagen_url"):
             select_cols.append("imagen_url")
+        if schema_has("productos", "imagen_srcset"):
+            select_cols.append("imagen_srcset")
+        if schema_has("productos", "imagen_width"):
+            select_cols.append("imagen_width")
+        if schema_has("productos", "imagen_height"):
+            select_cols.append("imagen_height")
         if has_descripcion:
             select_cols.append("descripcion")
 

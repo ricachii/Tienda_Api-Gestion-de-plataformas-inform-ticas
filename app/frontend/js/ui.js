@@ -53,9 +53,23 @@ function imageHtml(src, alt){
 export function renderGrid(items, {append=false} = {}){
   const cont = byId('productos');
   if(cont) cont.setAttribute('role','list');
-  const html = (items||[]).map(p=>`
+  const html = (items||[]).map(p=>{
+    // build image HTML with placeholder + data-src / data-srcset to avoid CLS
+    const escAlt = String(p.nombre||'').replace(/"/g,'&quot;');
+    const placeholder = `data:image/svg+xml;utf8,${encodeURIComponent(`
+      <svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'>
+        <rect width='100%' height='100%' fill='%23f9fafb'/>
+      </svg>`)};`;
+    let imgAttrs = `loading="lazy" src="${placeholder}" alt="${escAlt}" class="lazyimg"`;
+    if(p.imagen_url) imgAttrs += ` data-src="${p.imagen_url}"`;
+    if(p.imagen_srcset) imgAttrs += ` data-srcset="${p.imagen_srcset}"`;
+    if(p.imagen_width) imgAttrs += ` width="${p.imagen_width}"`;
+    if(p.imagen_height) imgAttrs += ` height="${p.imagen_height}"`;
+    const imgHtml = p.imagen_url ? `<img ${imgAttrs} onload="if(this.dataset.src){this.src=this.dataset.src; if(this.dataset.srcset){this.srcset=this.dataset.srcset;} delete this.dataset.src; delete this.dataset.srcset;}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',textContent:'Imagen'}))">` : `<div class="ph" role="img" aria-label="Sin imagen">Imagen</div>`;
+
+    return `
     <div class="card" role="listitem" aria-label="${(p.nombre||'Producto').replace(/"/g,'') }" data-id="${p.id}" data-stock="${p.stock ?? 0}">
-      <div class="imgwrap">${imageHtml(p.imagen_url, p.nombre)}</div>
+      <div class="imgwrap">${imgHtml}</div>
       <div class="cnt">
         <div class="cat">${p.categoria || ''}</div>
         <div class="name">${p.nombre}</div>
