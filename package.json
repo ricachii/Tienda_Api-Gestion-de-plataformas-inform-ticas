@@ -1,0 +1,15 @@
+{
+  "name": "tienda-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node build.js --watch",
+    "test:playwright": "npx playwright test"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.0",
+    "@playwright/test": "^1.40.0",
+    "lighthouse": "^11.9.0"
+  }
+}

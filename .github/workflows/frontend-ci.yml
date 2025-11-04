@@ -1,0 +1,41 @@
+name: Frontend CI
+
+on:
+  push:
+    paths:
+      - 'app/frontend/**'
+      - 'package.json'
+      - 'build.js'
+  pull_request:
+    paths:
+      - 'app/frontend/**'
+      - 'package.json'
+      - 'build.js'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Run Lighthouse (Desktop)
+        uses: treosh/lighthouse-ci-action@v9
+        with:
+          urls: 'http://127.0.0.1:8000'
+          uploadArtifacts: false
+
+      - name: Run Playwright tests
+        uses: microsoft/playwright-action@v1
+        with:
+          run: npm run test:playwright

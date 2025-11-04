@@ -36,8 +36,15 @@ export function updateListFooter({visible=false, canLoadMore=false}={}){
 function imageHtml(src, alt){
   const safeSrc = src || '';
   const escAlt = String(alt||'').replace(/"/g,'&quot;');
+  // If src provided, include lazy loading, width/height attributes via CSS aspect-ratio,
+  // and a small inline SVG placeholder to avoid CLS while loading.
+  const placeholder = `data:image/svg+xml;utf8,${encodeURIComponent(`
+    <svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'>
+      <rect width='100%' height='100%' fill='%23f9fafb'/>
+    </svg>`)};`;
   return safeSrc
-    ? `<img loading="lazy" src="${safeSrc}" alt="${escAlt}"
+    ? `<img loading="lazy" src="${placeholder}" data-src="${safeSrc}" alt="${escAlt}" class="lazyimg"
+         onload="if(this.dataset.src){this.src=this.dataset.src;delete this.dataset.src}"
          onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',textContent:'Imagen'}))">`
     : `<div class="ph" role="img" aria-label="Sin imagen">Imagen</div>`;
 }
