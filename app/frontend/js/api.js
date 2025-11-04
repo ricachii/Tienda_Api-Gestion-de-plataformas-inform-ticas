@@ -152,10 +152,6 @@ export const getVentasSerie = () => fetchJSON(`${API_BASE}/admin/ventas/serie`);
 export const getVentasCSV = () => fetchJSON(`${API_BASE}/admin/ventas.csv`);
 
 // Explicit named exports to satisfy bundlers that may not detect all hoisted exports
-export {
-  initApiBase, API_BASE,
-  loadAuth, saveAuth, clearAuth,
-  apiRegister, apiLogin, apiMe,
-  getProductos, getCategorias, postCheckout, postCompra,
-  getVentasResumen, getVentasSerie, getVentasCSV
-};
+// NOTE: All symbols are exported where they are defined above.
+// The explicit re-export block was removed because it duplicated named
+// exports and could confuse some bundlers during resolution.
