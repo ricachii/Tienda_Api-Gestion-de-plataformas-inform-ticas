@@ -56,7 +56,8 @@ jobs:
           urls: 'http://127.0.0.1:8000'
           uploadArtifacts: false
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
       - name: Run Playwright tests
-        uses: microsoft/playwright-action@v1
-        with:
-          run: npm run test:playwright
+        run: npm run test:playwright
