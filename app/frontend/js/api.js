@@ -1,6 +1,9 @@
 // app/frontend/js/api.js
 /* eslint-env browser, es2021 */
 
+// app/frontend/js/api.js
+/* eslint-env browser, es2021 */
+
 // ===== Autodetección de API =====
 export let API_BASE = window.location.origin;
 
@@ -23,8 +26,44 @@ export async function initApiBase() {
   for (const base of candidates) {
     if (await probe(base)) { API_BASE = base; return base; }
   }
-  // si nada responde, nos quedamos con origin igualmente
   return API_BASE;
+}
+
+// ===== Auth (token en localStorage) =====
+let AUTH = { token: null, exp: null, user: null };
+
+export function loadAuth() {
+  try {
+    const raw = localStorage.getItem('auth');
+    AUTH = raw ? JSON.parse(raw) : { token:null, exp:null, user:null };
+    // exp opcional: si está vencido, limpiar
+    if (AUTH?.exp && Date.now() > Number(AUTH.exp)) clearAuth();
+  } catch { AUTH = { token:null, exp:null, user:null }; }
+  return AUTH;
+}
+
+export function saveAuth(data) {
+  AUTH = { ...AUTH, ...data };
+  localStorage.setItem('auth', JSON.stringify(AUTH));
+  return AUTH;
+}
+
+export function clearAuth() {
+  AUTH = { token:null, exp:null, user:null };
+  localStorage.removeItem('auth');
+  return AUTH;
+}
+
+function needsAuthHeader(url) {
+  return /\/admin\//.test(url) || /\/me$/.test(url);
+}
+
+function buildHeaders(url, headers = {}) {
+  const base = new Headers(headers || {});
+  if (AUTH?.token && needsAuthHeader(url)) {
+    base.set('Authorization', `Bearer ${AUTH.token}`);
+  }
+  return base;
 }
 
 // ===== Helper fetch con timeout y reintentos =====
@@ -48,7 +87,11 @@ export async function fetchJSON(url, opts = {}, retries = 2) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 12000);
   try {
-    const r = await fetch(url, { ...opts, signal: ctrl.signal });
+    const r = await fetch(url, {
+      ...opts,
+      headers: buildHeaders(url, opts.headers),
+      signal: ctrl.signal,
+    });
     if (!r.ok) throw new Error(await getErrMsg(r));
     return r.json();
   } catch (err) {
@@ -62,16 +105,16 @@ export async function fetchJSON(url, opts = {}, retries = 2) {
   }
 }
 
-// ===== Endpoints =====
+// ===== Endpoints públicos =====
 export const getProductos = (page = 1, size = 12, q = '', cat = '') => {
   const p = new URLSearchParams({ page, size });
   if (q) p.set('q', q);
   if (cat) p.set('cat', cat);
   return fetchJSON(`${API_BASE}/productos?${p}`);
 };
-
 export const getCategorias = () => fetchJSON(`${API_BASE}/categorias`);
 
+// Compras
 export const postCheckout = (payload) =>
   fetchJSON(`${API_BASE}/checkout`, {
     method: 'POST',
@@ -85,3 +128,34 @@ export const postCompra = (producto_id, cantidad) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ producto_id, cantidad }),
   });
+
+// ===== Auth endpoints =====
+export const apiRegister = ({ email, nombre, password }) =>
+  fetchJSON(`${API_BASE}/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, nombre, password }),
+  });
+
+export const apiLogin = ({ email, password }) =>
+  fetchJSON(`${API_BASE}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+
+export const apiMe = () => fetchJSON(`${API_BASE}/me`, { method:'GET' });
+
+// ===== Admin (ejemplos; usarán Authorization automáticamente) =====
+export const getVentasResumen = () => fetchJSON(`${API_BASE}/admin/ventas/resumen`);
+export const getVentasSerie = () => fetchJSON(`${API_BASE}/admin/ventas/serie`);
+export const getVentasCSV = () => fetchJSON(`${API_BASE}/admin/ventas.csv`);
+
+// Explicit named exports to satisfy bundlers that may not detect all hoisted exports
+export {
+  initApiBase, API_BASE,
+  loadAuth, saveAuth, clearAuth,
+  apiRegister, apiLogin, apiMe,
+  getProductos, getCategorias, postCheckout, postCompra,
+  getVentasResumen, getVentasSerie, getVentasCSV
+};
