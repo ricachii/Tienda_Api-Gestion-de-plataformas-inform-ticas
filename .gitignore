@@ -15,3 +15,42 @@ __pycache__/
 /tienda-api-ia/venv/
 /tienda-api-ia/__pycache__/
 /tienda-api-ia/.pytest_cache/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node/web
+node_modules/
+dist/
+
+# Entornos/IDE
+.env
+.env.*
+*.code-workspace
+.vscode/
+
+# OS
+.DS_Store
+
+# Additional project ignores added by cleanup script
+# Local virtualenvs (some already present above but keep explicit)
+.venv/
+venv/
+
+# Uvicorn/runtime logs
+.uvicorn.log
+*.log
+
+# DB artifacts and operator fallbacks (CSV that may contain tokens)
+docs/db/pending_reset_tokens_*.csv
+
+# Archive tarballs (if you prefer to keep them out of the main tree)
+# Use with care: existing tracked tarballs remain tracked until removed from git index
+docs/db/*.tar.gz
+
+# Ignore actual environment file (keep example tracked)
+app/.env
+
+Thumbs.db
