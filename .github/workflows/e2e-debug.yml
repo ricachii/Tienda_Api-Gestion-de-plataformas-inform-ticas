@@ -1,0 +1,37 @@
+name: E2E Debug - List Playwright Tests
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  list-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Node dependencies
+        run: |
+          cd app/frontend
+          npm ci || npm install
+
+      - name: Print repo layout and tests directory
+        run: |
+          echo "PWD: $(pwd)"
+          echo "Listing repo root:"
+          ls -la
+          echo "Listing tests directory:"
+          ls -la tests || true
+          echo "Listing tests/playwright:"
+          ls -la tests/playwright || true
+
+      - name: Playwright - list discovered tests
+        run: |
+          echo "Running: npx --prefix app/frontend playwright test --list"
+          npx --prefix app/frontend playwright test --list || true
+        env:
+          CI: true
