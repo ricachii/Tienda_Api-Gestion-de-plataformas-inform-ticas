@@ -63,16 +63,16 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install Node deps and Playwright browsers
+      - name: Install Node deps (frontend)
         run: |
           cd app/frontend
           npm ci
-          npx playwright install --with-deps
 
-      - name: Run Playwright (Chromium, 2 workers)
+      - name: Run Playwright from repo root (Chromium, 2 workers)
         run: |
-          cd app/frontend
-          npx playwright test --project=chromium --workers=2 --reporter=html
+          # Run Playwright from the repository root but use the frontend package's node_modules
+          # so npx resolution works without changing working-directory.
+          npx --prefix app/frontend playwright test tests/playwright --project=chromium --workers=2 --reporter=html --output=app/frontend/playwright-report
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
