@@ -31,7 +31,9 @@ jobs:
 
       - name: Playwright - list discovered tests
         run: |
-          echo "Running: npx --prefix app/frontend playwright test --list"
-          npx --prefix app/frontend playwright test --list || true
+          echo "Running: playwright test --list (cwd=app/frontend, config=../playwright.config.js)"
+          pushd app/frontend >/dev/null
+          npx playwright test --config=../../playwright.config.js --list ../../tests/playwright || true
+          popd >/dev/null
         env:
           CI: true

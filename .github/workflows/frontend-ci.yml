@@ -67,6 +67,9 @@ jobs:
           npx playwright install --with-deps
 
       - name: Run Playwright tests
+        working-directory: ./app/frontend
         run: |
-          cd app/frontend
-          npm run test:playwright
+          # Run Playwright from the frontend package directory so node module
+          # resolution finds @playwright/test, but point at the repo-level
+          # config and tests directory.
+          npx playwright test --config=../../playwright.config.js ../../tests/playwright
