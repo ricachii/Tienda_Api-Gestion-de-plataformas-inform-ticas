@@ -4,13 +4,13 @@ on:
   push:
     paths:
       - 'app/frontend/**'
-      - 'package.json'
-      - 'build.js'
+      - 'app/frontend/package.json'
+      - 'app/frontend/build.js'
   pull_request:
     paths:
       - 'app/frontend/**'
-      - 'package.json'
-      - 'build.js'
+      - 'app/frontend/package.json'
+      - 'app/frontend/build.js'
   workflow_dispatch: {}
 
 jobs:
@@ -46,11 +46,14 @@ jobs:
 
       - name: Install Node dependencies
         run: |
-          # prefer reproducible install with package-lock.json, but fall back to npm install
+          # prefer reproducible install with package-lock.json inside app/frontend
+          cd app/frontend
           npm ci || npm install
 
       - name: Build frontend
-        run: npm run build
+        run: |
+          cd app/frontend
+          npm run build
 
       - name: Run Lighthouse (Desktop)
         uses: treosh/lighthouse-ci-action@v9
@@ -59,7 +62,14 @@ jobs:
           uploadArtifacts: false
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: |
+          cd app/frontend
+          npx playwright install --with-deps
 
       - name: Run Playwright tests
-        run: npm run test:playwright
+        working-directory: ./app/frontend
+        run: |
+          # Run Playwright from the frontend package directory so node module
+          # resolution finds @playwright/test, but point at the repo-level
+          # config and tests directory.
+          npx playwright test --config=../../playwright.config.js ../../tests/playwright

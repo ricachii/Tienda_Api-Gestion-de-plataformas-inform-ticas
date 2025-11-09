@@ -1,0 +1,9 @@
+.env
+.env.*
+venv/
+node_modules/
+dist/
+*.log
+*.sql
+*.docx
+*.pdf

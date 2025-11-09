@@ -125,3 +125,38 @@ Paso	Acción	Resultado esperado
 2	Importar tienda.sql	Tablas y datos restaurados
 3	Configurar .env	Conexión a MySQL local
 4	Ejecutar API	Endpoints disponibles en /docs
+
+## Instalación rápida (desarrolladores)
+
+Para trabajar localmente con el frontend y backend de forma reproducible sigue estos pasos:
+
+1. Crear y activar el entorno Python:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+2. Instalar dependencias Node.js reproducibles y construir el frontend:
+
+```bash
+cd tienda-api
+# usa el lockfile para instalaciones reproducibles
+npm ci
+npm run build
+```
+
+3. Ejecutar la API (desde la raíz del repo):
+
+```bash
+source .venv/bin/activate
+uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+Notas y buenas prácticas:
+- No comitees `node_modules/`, `dist/`, `.venv/`, `.uvicorn.log` ni tu carpeta `.vscode/` (están en `.gitignore`).
+- Si necesitas reproducir pruebas E2E, instala navegadores de Playwright:
+	`npx playwright install --with-deps`
+
+Si quieres que haga una limpieza automática del índice Git para dejar de trackear artefactos generados, dímelo y lo aplico (no borra archivos locales).

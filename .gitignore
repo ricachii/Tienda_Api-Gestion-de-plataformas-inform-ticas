@@ -54,3 +54,8 @@ docs/db/*.tar.gz
 app/.env
 
 Thumbs.db
+
+# Local test artifacts and PID files
+*.pid
+app/frontend/test-results/
+playwright-report/

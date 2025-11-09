@@ -1,9 +1,11 @@
-// Minimal build script: bundle frontend JS with esbuild and copy static files to dist/
+// build.js (moved to app/frontend)
+// Bundles frontend JS with esbuild and copies static files to root dist/
 const { build } = require('esbuild');
 const fs = require('fs');
 const path = require('path');
 
-const root = path.resolve(__dirname);
+// root is repo root (two levels above this file: repoRoot/app/frontend)
+const root = path.resolve(__dirname, '..', '..');
 const frontend = path.join(root, 'app', 'frontend');
 const out = path.join(root, 'dist');
 
