@@ -22,7 +22,7 @@ cp app/.env.example app/.env
 Luego abre app/.env y agrega tu contraseña real.
 
 🚀 Ejecutar la API
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn app.backend.main:app --host 0.0.0.0 --port 8000
 
 
 Accede a:
@@ -31,6 +31,23 @@ Swagger: http://127.0.0.1:8000/docs
 
 ReDoc: http://127.0.0.1:8000/redoc
 
+### 📁 Estructura del proyecto
+- `app/backend/`: Backend FastAPI completo (APIs, modelos, acceso a datos y recursos estáticos como `/media`).
+- `app/frontend/`: Frontend estático embebido en la app.
+- `docs/`: Documentación y notas (`docs/notas/` contiene apuntes personales).
+- `scripts/`: Utilidades (migraciones, verificación, despliegue).
+- `tests/`: Pruebas automatizadas (Playwright/E2E).
+- `deploy/`: Archivos de infraestructura/systemd.
+- `dist/`: Artefactos generados (no se versiona).
+- `test-results/`: Resultados de pruebas (no se versiona).
+- `tienda.sql`: Respaldo de la base de datos.
+- `run_uvicorn.py`: Script de ayuda para lanzar el servidor.
+
+### 📷 Catálogo de imágenes centralizado
+- Cada producto ahora usa una clave `imagen_ref` y la API arma las URLs desde `app/backend/image_catalog.yaml`.
+- Migra datos existentes con `python scripts/migrate_image_catalog.py` (usa la conexión configurada en `app/.env`).
+- Configura `IMG_BASE_URL` y, opcionalmente, `IMG_CATALOG_PATH` en tu `.env` de VM1.
+- Más detalles en `docs/IMAGENES.md`.
 
 Cómo restaurar la base de datos tienda.sql
 
@@ -100,7 +117,7 @@ Activa tu entorno virtual e inicia el servidor FastAPI:
 
 cd tienda-api
 source venv/bin/activate
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn app.backend.main:app --host 0.0.0.0 --port 8000
 
 
 Abre tu navegador y entra en:
@@ -151,7 +168,7 @@ npm run build
 
 ```bash
 source .venv/bin/activate
-uvicorn app.main:app --host 127.0.0.1 --port 8000
+uvicorn app.backend.main:app --host 127.0.0.1 --port 8000
 ```
 
 Notas y buenas prácticas:

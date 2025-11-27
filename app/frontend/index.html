@@ -9,139 +9,403 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <a class="skip-link" href="#productos">Saltar al contenido</a>
-  <header>
-    <div class="brand"><h1>💊 VitaZone • Tienda</h1></div>
-    <div class="toolbar">
-      <div class="pill">
-        <input id="q" type="search" placeholder="Buscar (ej. whey, omega, creatina)" aria-label="Buscar productos">
-        <button id="buscar" aria-label="Buscar">Buscar</button>
+  <a class="skip-link" href="#productos">Saltar al contenido principal</a>
+  <header class="site-header glass-card">
+    <div class="header-inner">
+      <div class="brand-mark">
+        <div class="logo-symbol brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 72 72" role="presentation" focusable="false">
+            <defs>
+              <linearGradient id="vzGradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#fd5ae3"/>
+                <stop offset="45%" stop-color="#c650ff"/>
+                <stop offset="100%" stop-color="#6b30de"/>
+              </linearGradient>
+            </defs>
+            <path d="M17.5 10c-3.6 0-6.4 3.4-5.7 6.9L21.4 62h12.4L22.2 18.5h8.5l5.7 15.2a4.3 4.3 0 0 0 8.04 0l5.68-15.2h8.5L38.1 62h12.5l9.6-45.1c.8-3.5-2.1-6.9-5.7-6.9H46c-2.2 0-4.2 1.3-5 3.3l-5 11.5-5-11.5c-.8-2-2.8-3.3-5-3.3Z" fill="url(#vzGradient)"/>
+          </svg>
+        </div>
+        <div class="brand-copy">
+          <span class="brand-name">VitaZone</span>
+          <span class="brand-slogan">Suplementos para rendir mejor todos los días</span>
+        </div>
       </div>
-      <select id="catSel" aria-label="Filtrar por categoría"><option value="">Todas</option></select>
-
-      <a class="link" href="/docs" target="_blank" rel="noopener">Swagger</a>
-      <a class="link" href="/redoc" target="_blank" rel="noopener">ReDoc</a>
-
-      <div class="cart-pill" title="Ítems en el carrito">
-        <span>🛒</span><span id="cartCount" class="badge">0</span>
+      <div class="header-search" role="search">
+        <label class="sr-only" for="q">Buscar productos</label>
+        <input id="q" type="search" placeholder="Busca por ingrediente o marca">
+        <button id="buscar" type="button" aria-label="Buscar suplementos disponibles">
+          <span class="icon-chip"><img src="/media/icons/search.svg" class="icon" alt=""></span>
+          Buscar
+        </button>
       </div>
-
-      <!-- Cuenta / sesión -->
-      <div class="cart-pill" title="Cuenta">
-        <span id="whoami" class="muted">Invitado</span>
-        <button id="btnLogin" class="ghost ml8">Iniciar sesión</button>
-        <button id="btnLogout" class="ghost ml8" style="display:none">Salir</button>
+      <div class="header-actions">
+        <nav class="nav-links" aria-label="Documentación">
+          <a class="pill-link" href="/docs" target="_blank" rel="noopener">Swagger</a>
+          <a class="pill-link" href="/redoc" target="_blank" rel="noopener">ReDoc</a>
+        </nav>
+        <div class="header-tools" aria-label="Accesos directos">
+          <button type="button" id="btnGoHome" class="icon-only" aria-label="Ir a inicio">
+            <img src="/media/icons/home.svg" class="icon" alt="">
+          </button>
+          <button type="button" id="btnGoCategories" class="icon-only" aria-label="Ver categorías">
+            <img src="/media/icons/categories.svg" class="icon" alt="">
+          </button>
+          <button type="button" id="btnNotifications" class="icon-only" aria-label="Notificaciones (demo)" disabled title="Próximamente">
+            <img src="/media/icons/notification.svg" class="icon" alt="">
+          </button>
+          <button type="button" id="btnFavs" class="icon-only" aria-label="Favoritos (demo)" disabled title="Próximamente">
+            <img src="/media/icons/favorits.svg" class="icon" alt="">
+          </button>
+        </div>
+        <div class="cart-indicator" title="Ítems en el carrito">
+          <span class="icon-chip"><img src="/media/icons/shopping_car.svg" class="icon" alt="Carrito"></span>
+          <span id="cartCount" class="badge">0</span>
+        </div>
+        <div class="session-info">
+          <span id="whoami" class="muted">Invitado</span>
+          <button id="btnLogin" class="ghost pill-action" type="button">
+            <img src="/media/icons/usuario.svg" class="icon icon-sm" alt="">
+            Iniciar sesión
+          </button>
+          <button id="btnLogout" class="ghost pill-action" type="button" style="display:none">
+            <img src="/media/icons/logout.svg" class="icon icon-sm" alt="">
+            Salir
+          </button>
+        </div>
       </div>
     </div>
-    <button id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="toolbar">☰<span class="sr-only">Abrir menú</span></button>
   </header>
-
-  <main role="main">
-    <section>
-      <div id="alertas" aria-live="polite" class="sr-only"></div>
-
-      <div id="loading" class="load-skel" style="display:none" aria-hidden="true">
-        <div class="load-card"></div><div class="load-card"></div><div class="load-card"></div>
-        <div class="load-card"></div><div class="load-card"></div><div class="load-card"></div>
+  <div class="offline-banner" role="status" aria-live="polite">
+    Sin conexión: algunas acciones pueden fallar. Revisa tu red.
+  </div>
+  <section class="hero hero-container" aria-labelledby="heroTitle">
+    <div class="hero-background" aria-hidden="true">
+      <span class="hero-orb orb-one"></span>
+      <span class="hero-orb orb-two"></span>
+      <span class="hero-orb orb-three"></span>
+    </div>
+    <div class="hero-grid">
+      <div class="hero-content">
+        <span class="hero-chip">Catálogo activo</span>
+        <h1 id="heroTitle">VitaZone: Nutrición inteligente para tu rendimiento</h1>
+        <p class="hero-subtitle">Suplementos confiables, stock real y control clínico permanente.</p>
+        <div class="hero-cta">
+          <button id="heroExplore" type="button" class="purple-cta" aria-label="Ver suplementos disponibles">
+            <span class="icon-chip"><img src="/media/icons/add_car.svg" class="icon" alt=""></span>
+            Ver suplementos
+          </button>
+        </div>
       </div>
-
-      <div class="grid" id="productos" aria-live="polite"></div>
-
-      <div id="listFooter" class="toolbar-row" style="justify-content:center;margin-top:12px;display:none">
-        <button id="loadMore" class="ghost">Cargar más</button>
-        <span id="endMsg" class="muted" style="display:none">No hay más resultados</span>
+      <div class="hero-visual">
+        <div class="hero-bottle glass-card">
+          <img src="/media/hero/hero_gradient.svg" alt="Fondo hero VitaZone" loading="lazy">
+        </div>
       </div>
+    </div>
+  </section>
+  <div class="hero-accent" aria-hidden="true"></div>
+  <section class="category-bar neon-panel surface-panel" aria-label="Categorías destacadas">
+    <div class="category-head">
+      <div class="category-title">
+        <span class="icon-chip category-head-icon" aria-hidden="true"><img src="/media/icons/categories.svg" class="icon" alt=""></span>
+        <div>
+          <h2>Categorías</h2>
+          <p class="muted small">Filtra por tipo de suplemento</p>
+        </div>
+      </div>
+    </div>
+    <div class="category-scroll-list" role="group" aria-label="Categorías rápidas" id="categoryChips">
+      <button type="button" class="category-chip" data-cat="proteínas" data-label="Proteínas">
+        <span class="icon-chip"><img src="/media/icons/protein.svg" class="icon" alt=""></span>
+        <strong>Proteínas</strong>
+        <small>(Premium)</small>
+      </button>
+      <button type="button" class="category-chip" data-cat="energía" data-label="Pre entreno">
+        <span class="icon-chip"><img src="/media/icons/burners.svg" class="icon" alt=""></span>
+        <strong>Pre entreno</strong>
+        <small>(Energía)</small>
+      </button>
+      <button type="button" class="category-chip" data-cat="salud" data-label="Vitaminas">
+        <span class="icon-chip"><img src="/media/icons/vitamins.svg" class="icon" alt=""></span>
+        <strong>Vitaminas</strong>
+        <small>(Bienestar)</small>
+      </button>
+      <button type="button" class="category-chip" data-cat="recuperación" data-label="Ganadores">
+        <span class="icon-chip"><img src="/media/icons/gainers.svg" class="icon" alt="Ganadores"></span>
+        <strong>Ganadores</strong>
+        <small>(Masa)</small>
+      </button>
+      <button type="button" class="category-chip" data-cat="Aminoácidos" data-label="Aminoácidos" aria-label="Filtrar por Aminoácidos">
+        <span class="icon-chip"><img src="/media/icons/aminoacido.svg" class="icon" alt="Aminoácidos"></span>
+        <strong>Aminoácidos</strong>
+        <small>(Recuperación)</small>
+      </button>
+      <button type="button" class="category-chip" data-cat="hidratación" data-label="Hidratación">
+        <span class="icon-chip"><img src="/media/icons/hydration.svg" class="icon" alt=""></span>
+        <strong>Hidratación</strong>
+        <small>(Electrolitos)</small>
+      </button>
+      <button type="button" class="category-chip" data-cat="fuerza" data-label="Creatina">
+        <span class="icon-chip"><img src="/media/icons/tag.svg" class="icon" alt="Creatina"></span>
+        <strong>Creatina</strong>
+        <small>(Monohidratada)</small>
+      </button>
+    </div>
+  </section>
+  <button id="heroSummary" type="button" class="sr-only">Ver carrito</button>
+
+  <main role="main" class="main-layout">
+    <section class="catalog-area">
+      <section class="filters-panel glass-card filter-panel" aria-label="Filtros avanzados">
+        <div class="filter-card-head">
+          <div class="filter-title">
+            <span class="icon-chip filter-chip-icon" aria-hidden="true"><img src="/media/icons/filter.svg" class="icon" alt=""></span>
+            <div>
+              <h2>Filtros</h2>
+              <p class="muted small">Delimita tu presupuesto y ordena el catálogo.</p>
+            </div>
+          </div>
+          <div class="filter-brand">
+            <span class="logo-symbol logo-sm" aria-hidden="true">
+              <svg viewBox="0 0 72 72" role="presentation" focusable="false">
+                <defs>
+                  <linearGradient id="vzGradientSm" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#fd5ae3"/>
+                    <stop offset="45%" stop-color="#c650ff"/>
+                    <stop offset="100%" stop-color="#6b30de"/>
+                  </linearGradient>
+                </defs>
+                <path d="M17.5 10c-3.6 0-6.4 3.4-5.7 6.9L21.4 62h12.4L22.2 18.5h8.5l5.7 15.2a4.3 4.3 0 0 0 8.04 0l5.68-15.2h8.5L38.1 62h12.5l9.6-45.1c.8-3.5-2.1-6.9-5.7-6.9H46c-2.2 0-4.2 1.3-5 3.3l-5 11.5-5-11.5c-.8-2-2.8-3.3-5-3.3Z" fill="url(#vzGradientSm)"/>
+              </svg>
+            </span>
+            <span class="brand-name">VitaZone</span>
+          </div>
+        </div>
+        <div class="filter-card-body">
+          <div class="filter-stack">
+            <div class="field">
+              <label for="priceMin">Precio mínimo (CLP)</label>
+              <input id="priceMin" type="number" min="0" placeholder="Ej: 15000">
+            </div>
+            <div class="field">
+              <label for="priceMax">Precio máximo (CLP)</label>
+              <input id="priceMax" type="number" min="0" placeholder="Ej: 45000">
+            </div>
+            <button id="resetFiltros" class="purple-cta filter-reset" type="button" aria-label="Restablecer filtros">Restablecer</button>
+          </div>
+          <div class="filter-select-wrap">
+            <p class="muted small order-label">
+              <img src="/media/icons/ordenar.svg" class="icon icon-sm" alt="">
+              Ordenar catálogo
+            </p>
+            <div class="filter-select-shell">
+              <select id="sortSel">
+                <option value="featured">Destacados</option>
+                <option value="price-asc">Precio: menor a mayor</option>
+                <option value="price-desc">Precio: mayor a menor</option>
+                <option value="stock">Stock disponible</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="catalog-main glass-card">
+        <header class="catalog-header">
+          <div>
+            <p class="muted small">Catálogo general</p>
+            <h2 id="resultsTitle">Productos disponibles</h2>
+          </div>
+          <div class="catalog-actions">
+            <span class="muted" id="resultsCount">— productos</span>
+            <span id="filterStatus" class="filter-chip" style="display:none;"></span>
+            <button class="ghost pill-action" id="refreshCatalog" type="button">Actualizar listado</button>
+          </div>
+        </header>
+
+        <div id="alertas" aria-live="polite" class="sr-only"></div>
+
+        <div id="loading" class="load-skel" style="display:none" aria-hidden="true">
+          <div class="load-card"></div><div class="load-card"></div><div class="load-card"></div>
+          <div class="load-card"></div><div class="load-card"></div><div class="load-card"></div>
+        </div>
+
+        <div class="grid" id="productos" aria-live="polite"></div>
+
+        <div id="listFooter" class="toolbar-row" style="justify-content:center;margin-top:12px;display:none">
+          <button id="loadMore" class="ghost pill-action" type="button">Cargar más</button>
+          <span id="endMsg" class="muted" style="display:none">No hay más resultados</span>
+        </div>
+      </section>
     </section>
 
-  <aside role="complementary" aria-label="Carrito">
-      <h3 style="margin:6px 0 4px">🛒 Carrito</h3>
-      <div id="cart" class="cart-empty" aria-live="polite">Vacío</div>
-
-      <div class="subt"><span>Subtotal</span><span id="subtotal">$0</span></div>
-      <div class="subt"><span>Despacho (estimado)</span><span id="ship">$0</span></div>
-      <div class="subt"><span>Descuentos</span><span id="disc">$0</span></div>
-      <div class="tot"><span>Total</span><span id="total">$0</span></div>
-
-      <div class="foot-actions">
-        <button id="vaciar" class="ghost" aria-label="Vaciar carrito">Vaciar</button>
-        <button id="resumen" class="warn" aria-label="Ver resumen">Resumen</button>
-        <button id="pagar" aria-label="Pagar">Pagar</button>
+    <aside role="complementary" aria-label="Carrito" class="cart-panel cart-sidebar glass-card">
+      <div class="cart-header">
+        <div>
+          <p class="muted small">Resumen de compra</p>
+          <h3><span class="icon-chip"><img src="/media/icons/shopping_car.svg" class="icon" alt=""></span>Carrito VitaZone</h3>
+        </div>
       </div>
-      <p class="muted" style="margin-top:8px">API: <code id="apiBase"></code></p>
+      <p class="muted small">Productos seleccionados listos para checkout. Ajusta cantidades desde aquí.</p>
+      <div id="cart" class="cart-empty" aria-live="polite"></div>
+
+      <div class="cart-summary glass-card">
+        <div class="summary-row"><span>Subtotal</span><strong id="subtotal">$0</strong></div>
+        <div class="summary-row"><span>Despacho (estimado)</span><strong id="ship">$0</strong></div>
+        <div class="summary-row"><span>Descuentos</span><strong id="disc">$0</strong></div>
+        <div class="summary-total"><span>Total</span><strong id="total">$0</strong></div>
+      </div>
+
+      <div class="cart-actions">
+        <button id="vaciar" class="ghost pill-action" type="button" aria-label="Vaciar carrito"><span class="icon-chip"><img src="/media/icons/vaciar.svg" class="icon" alt=""></span>Vaciar</button>
+        <button id="resumen" class="ghost pill-action" type="button" aria-label="Ver resumen de compra"><span class="icon-chip"><img src="/media/icons/check.svg" class="icon" alt=""></span>Resumen</button>
+        <button id="pagar" class="purple-cta" type="button" aria-label="Ir al pago"><span class="icon-chip"><img src="/media/icons/pago.svg" class="icon" alt=""></span>Pagar</button>
+      </div>
+      <p id="cartNotice" class="cart-notice muted small" style="display:none">Agrega productos para habilitar el resumen y el pago.</p>
+      <p class="cart-meta muted small">API: <code id="apiBase"></code> • Frontend: <code id="frontendVersion">—</code></p>
     </aside>
   </main>
 
-  <footer>© VitaZone — demo académica</footer>
+  <footer>© VitaZone — Demo académica para Gestión de Plataformas Informáticas</footer>
 
-  <!-- ===== Modal Resumen ===== -->
-  <div id="ovSummary" class="overlay" role="dialog" aria-modal="true" aria-labelledby="sumTitle">
-    <div class="modal" role="document">
+  <!-- ===== Modal de detalle de producto ===== -->
+  <div id="ovProduct" class="overlay" role="dialog" aria-modal="true" aria-labelledby="prodTitle">
+    <div class="modal modal-product glass-card" role="document">
       <header>
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <h3 id="sumTitle" style="margin:0">🧾 Resumen de compra</h3>
-          <button class="x" data-close="ovSummary" aria-label="Cerrar">✕</button>
+          <h3 id="prodTitle" style="margin:0">Detalle del producto</h3>
+          <button class="x" data-close="ovProduct" aria-label="Cerrar"><img src="/media/icons/cerrar.svg" class="icon icon-sm" alt="Cerrar"></button>
+        </div>
+      </header>
+      <div class="content product-body">
+        <div class="product-media">
+          <img id="prodImg" alt="" />
+        </div>
+        <div class="product-info">
+          <span class="cat" id="prodCat">—</span>
+          <h2 id="prodName"></h2>
+          <p id="prodDesc" class="muted"></p>
+          <div class="product-specs">
+            <div><span>Precio</span><strong id="prodPrice">$0</strong></div>
+            <div><span>Stock</span><strong id="prodStock">—</strong></div>
+          </div>
+          <div class="actions">
+            <button id="modalAddCart" class="purple-cta">Agregar al carrito</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Modal Checkout multi-step ===== -->
+  <div id="ovCheckout" class="overlay" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
+    <div class="modal glass-card" role="document">
+      <header>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <h3 id="checkoutTitle" style="margin:0">🛒 Flujo de compra</h3>
+          <button class="x" data-close="ovCheckout" aria-label="Cerrar"><img src="/media/icons/cerrar.svg" class="icon icon-sm" alt="Cerrar"></button>
         </div>
       </header>
       <div class="content">
-        <div id="sumEmpty" class="muted">Tu carrito está vacío.</div>
-        <div id="sumContent" style="display:none">
-          <div class="receipt" id="receiptItems"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
-            <div class="field">
-              <label for="inpNombre">Nombre (opcional)</label>
-              <input id="inpNombre" type="text" placeholder="Nombre y apellido">
+        <div id="wizardEmpty" class="muted">Tu carrito está vacío.</div>
+        <div id="wizardContent" style="display:none">
+          <div class="steps" id="checkoutSteps">
+            <div class="step checkout-step active" data-step="1"><span>1</span><p>Productos</p></div>
+            <div class="step checkout-step" data-step="2"><span>2</span><p>Datos cliente</p></div>
+            <div class="step checkout-step" data-step="3"><span>3</span><p>Confirmación</p></div>
+          </div>
+          <div class="wizard-step" data-step="1">
+            <div class="receipt" id="stepItems"></div>
+          </div>
+          <div class="wizard-step" data-step="2">
+            <div class="grid-2">
+              <div class="field">
+                <label for="ckNombre">Nombre completo</label>
+                <input id="ckNombre" type="text" placeholder="Nombre y apellido">
+              </div>
+              <div class="field">
+                <label for="ckEmail">Correo electrónico</label>
+                <input id="ckEmail" type="email" placeholder="tu@correo.com">
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label for="ckDireccion">Dirección de envío</label>
+                <input id="ckDireccion" type="text" placeholder="Calle y número">
+              </div>
+              <div class="field">
+                <label for="ckCiudad">Ciudad / Región</label>
+                <input id="ckCiudad" type="text" placeholder="Ej. Concepción">
+              </div>
             </div>
             <div class="field">
-              <label for="inpEmail">Email (opcional)</label>
-              <input id="inpEmail" type="email" placeholder="tu@correo.com">
+              <label for="ckNotas">Notas adicionales</label>
+              <textarea id="ckNotas" rows="3" placeholder="Indicaciones internas o laboratorio destinatario"></textarea>
             </div>
           </div>
-          <p class="muted" style="margin:8px 0 0">Los datos se guardan localmente para próximas compras.</p>
+          <div class="wizard-step" data-step="3">
+            <div class="receipt" id="stepResumen"></div>
+          </div>
           <p id="sumErr" class="errtxt" style="display:none"></p>
         </div>
       </div>
       <div class="actions">
-        <button class="ghost" data-close="ovSummary">Seguir comprando</button>
-        <button id="btnConfirmarResumen">Confirmar y pagar</button>
+        <button class="ghost" id="btnStepBack">Anterior</button>
+        <div class="wizard-btns">
+          <button class="ghost" data-close="ovCheckout">
+            <span class="icon-chip"><img src="/media/icons/cerrar.svg" class="icon icon-sm" alt=""></span>
+            Cancelar
+          </button>
+          <button id="btnStepNext" class="purple-cta">Siguiente</button>
+          <button id="btnCheckoutPay" class="purple-cta" style="display:none">Confirmar y pagar</button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- ===== Modal Boleta ===== -->
   <div id="ovDone" class="overlay" role="dialog" aria-modal="true" aria-labelledby="doneTitle">
-    <div class="modal" role="document">
+    <div class="modal glass-card" role="document">
       <header>
         <div style="display:flex;align-items:center;justify-content:space-between">
           <h3 id="doneTitle" style="margin:0">✅ Compra realizada</h3>
-          <button class="x" data-close="ovDone" aria-label="Cerrar">✕</button>
+          <button class="x" data-close="ovDone" aria-label="Cerrar"><img src="/media/icons/cerrar.svg" class="icon icon-sm" alt="Cerrar"></button>
         </div>
       </header>
       <div class="content">
         <div class="receipt">
           <h4>Boleta</h4>
           <div class="rline"><span>Orden</span><strong id="doneOrder">—</strong></div>
+          <div class="rline"><span>Estado</span><strong id="doneStatus">—</strong></div>
           <div class="rline"><span>Total</span><strong id="doneTotal">—</strong></div>
           <div id="doneItems" style="margin-top:6px"></div>
         </div>
         <p class="oktxt" style="margin-top:8px">¡Gracias por tu compra!</p>
       </div>
       <div class="actions">
-        <button class="ghost" data-close="ovDone">Cerrar</button>
-        <button id="btnSeguir">Seguir comprando</button>
+        <button class="ghost" data-close="ovDone">
+          <span class="icon-chip"><img src="/media/icons/cerrar.svg" class="icon icon-sm" alt=""></span>
+          Cerrar
+        </button>
+        <button id="btnSeguir" class="purple-cta">Seguir comprando</button>
       </div>
     </div>
   </div>
 
   <!-- ===== Modal Autenticación ===== -->
   <div id="ovAuth" class="overlay" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-    <div class="modal" role="document">
-      <header>
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <h3 id="authTitle" style="margin:0">🔐 Acceso</h3>
-          <button class="x" data-close="ovAuth" aria-label="Cerrar">✕</button>
+    <div class="modal glass-card auth-modal" role="document">
+      <header class="auth-head">
+        <div class="auth-title">
+          <span class="auth-lock icon-chip" aria-hidden="true">🔐</span>
+          <div>
+            <h3 id="authTitle">Acceso</h3>
+            <p class="muted small">Ingresa tus credenciales</p>
+          </div>
         </div>
+        <button class="x" data-close="ovAuth" aria-label="Cerrar"><img src="/media/icons/cerrar.svg" class="icon icon-sm" alt="Cerrar"></button>
       </header>
-      <div class="content">
+      <div class="content auth-body">
         <div class="field">
           <label for="authEmail">Email</label>
           <input id="authEmail" type="email" placeholder="tu@correo.com" autocomplete="username">
@@ -151,9 +415,9 @@
           <input id="authPass" type="password" placeholder="********" autocomplete="current-password">
         </div>
 
-        <details style="margin-top:8px">
+        <details class="auth-register">
           <summary>¿No tienes cuenta? Registrar</summary>
-          <div class="field" style="margin-top:8px">
+          <div class="field">
             <label for="authName">Nombre</label>
             <input id="authName" type="text" placeholder="Nombre y apellido" autocomplete="name">
           </div>
@@ -161,10 +425,18 @@
 
         <p id="authErr" class="errtxt" style="display:none"></p>
       </div>
-      <div class="actions">
+      <div class="actions auth-actions">
         <button class="ghost" id="btnDoRegister">Registrar</button>
-        <button id="btnDoLogin">Iniciar sesión</button>
+        <button id="btnDoLogin" class="purple-cta">Iniciar sesión</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Overlay global reutilizable para cargas -->
+  <div id="globalLoading" class="global-loading" aria-hidden="true">
+    <div class="gl-shell">
+      <div class="gl-spinner" aria-hidden="true"></div>
+      <p class="gl-message">Procesando…</p>
     </div>
   </div>
 

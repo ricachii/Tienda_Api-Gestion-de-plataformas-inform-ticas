@@ -1,0 +1,20 @@
+<svg width="64px" height="64px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="vitaVitaminGradient" x1="0" y1="0" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9b5bff" />
+      <stop offset="100%" stop-color="#8257E6" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="0.8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <g filter="url(#glow)">
+    <path d="M10.5 2.5L2.5 10.5C1.32843 11.6716 1.32843 13.5711 2.5 14.7426C3.67157 15.9142 5.57107 15.9142 6.74264 14.7426L14.7426 6.74264C15.9142 5.57107 15.9142 3.67157 14.7426 2.5C13.5711 1.32843 11.6716 1.32843 10.5 2.5Z" stroke="url(#vitaVitaminGradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M6 11L11 6" stroke="url(#vitaVitaminGradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <circle cx="17.5" cy="17.5" r="4.5" stroke="url(#vitaVitaminGradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M14.5 20.5L20.5 14.5" stroke="url(#vitaVitaminGradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

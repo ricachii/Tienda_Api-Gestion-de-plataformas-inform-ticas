@@ -1,0 +1,13 @@
+<svg width="64px" height="64px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad_check" x1="0" y1="0" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9b5bff" />
+      <stop offset="100%" stop-color="#8257E6" />
+    </linearGradient>
+    <filter id="glow_check"><feGaussianBlur stdDeviation="0.8" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter>
+  </defs>
+  <g filter="url(#glow_check)">
+    <circle cx="12" cy="12" r="10" stroke="url(#grad_check)" stroke-width="2"/>
+    <path d="M8 12L11 15L16 9" stroke="url(#grad_check)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

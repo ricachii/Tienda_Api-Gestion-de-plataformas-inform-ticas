@@ -1,9 +1,12 @@
 import csv
+import json
+from pathlib import Path
+import hashlib
 import io
-import math
 import time
+from decimal import Decimal
 from datetime import datetime, date, timedelta
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Callable, Literal
 
 import jwt  # PyJWT
 from fastapi import APIRouter, HTTPException, Query, Depends, Request
@@ -11,9 +14,11 @@ from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import logging
 
+BACKEND_DIR = Path(__file__).resolve().parent
+APP_DIR = BACKEND_DIR.parent
+
 from .db import (
     get_conn,
-    schema_has,
     DBError,
     DBOperationalError,
     DBIntegrityError,
@@ -26,6 +31,8 @@ from .db import (
     ensure_schema,
     create_password_reset_token,
     consume_password_reset_token,
+    verify_password,
+    upgrade_legacy_password_hash,
 )
 from .models import (
     CompraRequest,
@@ -46,11 +53,33 @@ from .models import (
     VentasSerie,
     SerieItem,
     StatsResponse,
+    OrderItem,
+    OrderSummary,
+    OrderDetail,
+    OrdersResponse,
 )
 from .metrics import APP_START_TIME, get_latency_percentiles, latency_store
+from .repositories.catalog import fetch_categories, fetch_products
+from .repositories.orders import load_order_snapshot, list_orders, get_order_detail
+from .utils import quantize_money
 
 router = APIRouter()
 logger = logging.getLogger("tienda-api")
+
+# Intento simple de exponer la versión del frontend (si está presente)
+FRONTEND_DIR = APP_DIR / "frontend"
+
+
+@router.get("/frontend/version", tags=["util"])  # pequeño endpoint utilitario
+def frontend_version():
+    p = FRONTEND_DIR / "package.json"
+    if not p.exists():
+        return {"version": None}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        return {"version": data.get("version")}
+    except Exception:
+        return {"version": None}
 
 
 # Util: validación de rangos de fecha (from/to)
@@ -78,11 +107,13 @@ def decode_jwt(token: str) -> Dict[str, Any]:
         raise HTTPException(status_code=401, detail="Token inválido")
 
 class RateLimiter:
-    # Simple rate-limit por IP para /login: 5 intentos / 5 minutos
+    """Rate limit simple para proteger /login."""
+
     def __init__(self, max_attempts=5, window_sec=300):
         self.max_attempts = max_attempts
         self.window = window_sec
         self.attempts: Dict[str, List[int]] = {}
+
     def hit(self, key: str):
         now = int(time.time())
         arr = self.attempts.setdefault(key, [])
@@ -107,6 +138,17 @@ def require_admin(user=Depends(get_current_user)):
     if user["rol"] != "admin":
         raise HTTPException(status_code=403, detail="Requiere rol admin")
     return user
+
+def get_optional_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Optional[Dict[str, Any]]:
+    """Devuelve el usuario autenticado si viene un token; de lo contrario None."""
+    if not creds:
+        return None
+    data = decode_jwt(creds.credentials)
+    uid = int(data["sub"])
+    user = get_user_by_id(uid)
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuario no existe")
+    return {"id": user["id"], "email": user["email"], "nombre": user["nombre"], "rol": user["rol"]}
 
 # AUTH: register/login/me
 @router.post("/register", response_model=MeResponse, status_code=201, tags=["auth"])
@@ -145,9 +187,25 @@ def login(payload: LoginRequest, request: Request):
     # Si el usuario está marcado para reset forzado, bloquear login e indicar 403
     if user.get("password_reset_required"):
         raise HTTPException(status_code=403, detail="password_reset_required: debe restablecer su contraseña")
-    from .db import verify_password
-    if not verify_password(payload.password, user["password_hash"], user["salt"]):
+    salt = user.get("salt")
+    if not verify_password(payload.password, user.get("password_hash"), salt):
+        hash_val = user.get("password_hash")
+        salt_val = user.get("salt")
+        logger.warning(
+            "Login rechazado para %s: hash_type=%s hash_len=%s salt_type=%s salt_len=%s hash_preview=%s",
+            user["email"],
+            type(hash_val).__name__,
+            len(hash_val) if hash_val is not None else None,
+            type(salt_val).__name__,
+            len(salt_val) if salt_val is not None else None,
+            repr(hash_val)[:80],
+        )
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    if not salt:
+        try:
+            upgrade_legacy_password_hash(user["id"], payload.password)
+        except Exception as exc:  # no bloquear login si falla upgrade
+            logger.warning("No se pudo actualizar hash legado para %s: %s", user["email"], exc)
     token = create_jwt(user["id"], user["email"], user["rol"])
     return {"access_token": token, "expires_in": JWT_EXPIRE_MIN * 60, "token_type": "bearer"}
 
@@ -199,19 +257,7 @@ def me(user=Depends(get_current_user)):
 # CATÁLOGO
 @router.get("/categorias", response_model=List[str], tags=["catalogo"])
 def categorias():
-    conn = get_conn()
-    try:
-        # Si la columna 'categoria' no existe en el esquema, devolver lista vacía
-        if not schema_has("productos", "categoria"):
-            conn.close()
-            return []
-        with conn.cursor() as c:
-            c.execute("SELECT DISTINCT categoria FROM productos WHERE categoria IS NOT NULL AND categoria<>'' ORDER BY categoria ASC")
-            rows = [r["categoria"] for r in c.fetchall()]
-        conn.commit()
-        return rows
-    finally:
-        conn.close()
+    return fetch_categories()
 
 
 # Endpoint interno para chequeo de DB (no en docs)
@@ -248,61 +294,12 @@ def _internal_db_check(request: Request, creds: Optional[HTTPAuthorizationCreden
 @router.get("/productos", response_model=ProductosResponse, tags=["catalogo"])
 def productos(page: int = Query(1, ge=1), size: int = Query(12, ge=1, le=100),
               q: Optional[str] = None, cat: Optional[str] = None):
-    offset = (page - 1) * size
-    conn = get_conn()
-    try:
-        where = []
-        args: List[Any] = []
-
-        # Construir filtros teniendo en cuenta columnas opcionales en la tabla
-        has_descripcion = schema_has("productos", "descripcion")
-        has_categoria = schema_has("productos", "categoria")
-
-        if q:
-            if has_descripcion:
-                where.append("(LOWER(nombre) LIKE %s OR LOWER(descripcion) LIKE %s)")
-                args.extend([f"%{q.lower()}%", f"%{q.lower()}%"])
-            else:
-                where.append("LOWER(nombre) LIKE %s")
-                args.append(f"%{q.lower()}%")
-        if cat and has_categoria:
-            where.append("categoria=%s")
-            args.append(cat)
-
-        where_sql = (" WHERE " + " AND ".join(where)) if where else ""
-
-        # Seleccionar solo las columnas que existen en la tabla
-        select_cols = ["id", "nombre", "precio", "stock"]
-        if has_categoria:
-            select_cols.append("categoria")
-        # Image columns: imagen_url is common; optionally include imagen_srcset, imagen_width, imagen_height
-        if schema_has("productos", "imagen_url"):
-            select_cols.append("imagen_url")
-        if schema_has("productos", "imagen_srcset"):
-            select_cols.append("imagen_srcset")
-        if schema_has("productos", "imagen_width"):
-            select_cols.append("imagen_width")
-        if schema_has("productos", "imagen_height"):
-            select_cols.append("imagen_height")
-        if has_descripcion:
-            select_cols.append("descripcion")
-
-        cols_sql = ",".join(select_cols)
-
-        with conn.cursor() as c:
-            c.execute(f"SELECT COUNT(*) AS total FROM productos{where_sql}", args)
-            total = c.fetchone()["total"]
-            c.execute(f"SELECT {cols_sql} FROM productos{where_sql} ORDER BY id ASC LIMIT %s OFFSET %s", args + [size, offset])
-            items = c.fetchall()
-
-        total_pages = math.ceil(total / size) if size else 1
-        return {"total_items": total, "total_pages": total_pages, "page": page, "size": size, "items": items}
-    finally:
-        conn.close()
+    return fetch_products(page, size, q, cat)
 
 # VENTAS
+
 @router.post("/compras", response_model=CompraResponse, status_code=201, tags=["ventas"])
-def comprar(payload: CompraRequest):
+def comprar(payload: CompraRequest, user=Depends(get_optional_user)):
     conn = get_conn()
     try:
         with conn.cursor() as c:
@@ -313,11 +310,14 @@ def comprar(payload: CompraRequest):
             if prod["stock"] < payload.cantidad:
                 raise HTTPException(status_code=409, detail="Stock insuficiente")
             c.execute("UPDATE productos SET stock=stock-%s WHERE id=%s", (payload.cantidad, payload.producto_id))
-            c.execute("INSERT INTO compras (producto_id, cantidad) VALUES (%s,%s)", (payload.producto_id, payload.cantidad))
+            c.execute(
+                "INSERT INTO compras (producto_id, usuario_id, cantidad) VALUES (%s,%s,%s)",
+                (payload.producto_id, user["id"] if user else None, payload.cantidad),
+            )
             compra_id = c.lastrowid
         conn.commit()
         with conn.cursor() as c2:
-            c2.execute("SELECT id, producto_id, cantidad, fecha FROM compras WHERE id=%s", (compra_id,))
+            c2.execute("SELECT id, producto_id, usuario_id, cantidad, fecha FROM compras WHERE id=%s", (compra_id,))
             row = c2.fetchone()
         return row
     except HTTPException:
@@ -332,33 +332,127 @@ def comprar(payload: CompraRequest):
     finally:
         conn.close()
 
+
+@router.get("/orders/{order_id}", response_model=OrderDetail, tags=["admin"])
+def order_detail(order_id: int, user=Depends(require_admin)):
+    order = get_order_detail(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Orden no encontrada")
+    return order
+
+
+@router.get("/orders", response_model=OrdersResponse, tags=["admin"])
+def orders_list(
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=200),
+    status: Optional[Literal["PAID","CANCELLED","PENDING"]] = Query(None),
+    email: Optional[str] = Query(None),
+    user=Depends(require_admin),
+):
+    return list_orders(page, size, status, email)
+
 @router.post("/checkout", response_model=CheckoutResponse, tags=["ventas"])
-def checkout(payload: CheckoutRequest):
+def checkout(payload: CheckoutRequest, user=Depends(get_optional_user)):
     if not payload.items:
         raise HTTPException(status_code=400, detail="Carrito vacío")
     conn = get_conn()
     compras_realizadas: List[CheckoutResultItem] = []
     try:
         total_unidades = 0
+        order_total = Decimal("0.00")
         with conn.cursor() as c:
+            idempotency_row_id = None
+            idempotency_hash = None
+            if payload.idempotency_key:
+                idempotency_hash = hashlib.sha256(payload.idempotency_key.encode("utf-8")).hexdigest()
+                c.execute(
+                    "SELECT id, order_id FROM idempotency_keys WHERE key_hash=%s FOR UPDATE",
+                    (idempotency_hash,),
+                )
+                existing = c.fetchone()
+                if existing and existing.get("order_id"):
+                    conn.commit()
+                    snapshot = load_order_snapshot(conn, existing["order_id"])
+                    if snapshot:
+                        return snapshot
+                if existing:
+                    idempotency_row_id = existing["id"]
+                else:
+                    c.execute("INSERT INTO idempotency_keys (key_hash) VALUES (%s)", (idempotency_hash,))
+                    idempotency_row_id = c.lastrowid
+
+            # Validar stock y preparar items
+            prepared_items: List[Dict[str, Any]] = []
             for it in payload.items:
-                c.execute("SELECT id, stock FROM productos WHERE id=%s FOR UPDATE", (it.producto_id,))
+                c.execute("SELECT id, stock, precio FROM productos WHERE id=%s FOR UPDATE", (it.producto_id,))
                 prod = c.fetchone()
                 if not prod:
                     raise HTTPException(status_code=404, detail=f"Producto {it.producto_id} no existe")
                 if prod["stock"] < it.cantidad:
                     raise HTTPException(status_code=409, detail=f"Stock insuficiente para producto {it.producto_id}")
-                c.execute("UPDATE productos SET stock=stock-%s WHERE id=%s", (it.cantidad, it.producto_id))
-                c.execute("INSERT INTO compras (producto_id, cantidad) VALUES (%s,%s)", (it.producto_id, it.cantidad))
-                compras_realizadas.append(CheckoutResultItem(compra_id=c.lastrowid, producto_id=it.producto_id, cantidad=it.cantidad))
-                total_unidades += it.cantidad
+                price = prod["precio"]
+                if not isinstance(price, Decimal):
+                    price = Decimal(str(price))
+                prepared_items.append(
+                    {
+                        "producto_id": prod["id"],
+                        "cantidad": it.cantidad,
+                        "precio_unit": quantize_money(price),
+                    }
+                )
+
+            # Crear orden principal
+            for it in prepared_items:
+                item_total = it["precio_unit"] * Decimal(it["cantidad"])
+                order_total += quantize_money(item_total)
+                total_unidades += it["cantidad"]
+            order_total = quantize_money(order_total)
+            c.execute(
+                "INSERT INTO orders (customer_name, customer_email, total, status) VALUES (%s,%s,%s,%s)",
+                (payload.customer_name, payload.customer_email, order_total, "PAID"),
+            )
+            order_id = c.lastrowid
+
+            # Insertar items de orden y compras (compatibilidad con reportes existentes)
+            for it in prepared_items:
+                c.execute(
+                    "INSERT INTO order_items (order_id, producto_id, cantidad, precio_unit) VALUES (%s,%s,%s,%s)",
+                    (order_id, it["producto_id"], it["cantidad"], it["precio_unit"]),
+                )
+                order_item_id = c.lastrowid
+                c.execute(
+                    "UPDATE productos SET stock=stock-%s WHERE id=%s",
+                    (it["cantidad"], it["producto_id"]),
+                )
+                c.execute(
+                    "INSERT INTO compras (producto_id, usuario_id, cantidad) VALUES (%s,%s,%s)",
+                    (it["producto_id"], user["id"] if user else None, it["cantidad"]),
+                )
+                compra_id = c.lastrowid
+                compras_realizadas.append(
+                    CheckoutResultItem(
+                        compra_id=compra_id,
+                        order_item_id=order_item_id,
+                        producto_id=it["producto_id"],
+                        cantidad=it["cantidad"],
+                    )
+                )
+
+            if idempotency_row_id and idempotency_hash:
+                c.execute(
+                    "UPDATE idempotency_keys SET order_id=%s WHERE id=%s",
+                    (order_id, idempotency_row_id),
+                )
         conn.commit()
         return CheckoutResponse(
             status="ok",
+            order_id=order_id,
+            order_status="PAID",
+            total=order_total,
             total_items=len(payload.items),
             total_unidades=total_unidades,
             compras=compras_realizadas,
-            detalle="Checkout completado; compras registradas y stock actualizado",
+            detalle="Checkout completado; orden y items creados, stock actualizado",
         )
     except HTTPException:
         conn.rollback()

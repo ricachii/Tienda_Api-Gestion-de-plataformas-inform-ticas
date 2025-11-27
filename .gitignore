@@ -59,3 +59,13 @@ Thumbs.db
 *.pid
 app/frontend/test-results/
 playwright-report/
+# Entorno virtual
+.venv/
+
+# Logs
+*.log
+.uvicorn.log
+
+# Builds / artefactos generados
+dist/
+test-results/

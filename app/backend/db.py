@@ -1,22 +1,72 @@
+import base64
+import csv
+import hmac
 import os
+import string
 from typing import Optional, Tuple, Any, Dict
+from urllib.parse import quote_plus
 
 import pymysql
 from pymysql.cursors import DictCursor
 from pymysql.err import MySQLError, OperationalError, IntegrityError, ProgrammingError
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
 import hashlib
 import secrets
 import queue
 import threading
 import time
+from functools import lru_cache
 import smtplib
 from email.message import EmailMessage
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
+
+try:
+    from passlib.context import CryptContext
+    from passlib.hash import bcrypt as bcrypt_hasher
+except Exception:  # pragma: no cover - passlib optional in some environments
+    CryptContext = None
+    bcrypt_hasher = None
+
+PASSWORD_CONTEXT = None
+if CryptContext is not None:  # pragma: no cover - optional dependency
+    PASSWORD_CONTEXT = CryptContext(
+        schemes=["pbkdf2_sha256", "sha256_crypt", "bcrypt", "bcrypt_sha256"],
+        deprecated="auto",
+    )
+
+# Combos conocidos/legacy de PBKDF2 que se probarán en cascada.
+PBKDF2_VARIANTS = [
+    ("sha256", 1_000),
+    ("sha256", 10_000),
+    ("sha256", 25_000),
+    ("sha256", 50_000),
+    ("sha256", 75_000),
+    ("sha256", 100_000),   # formato actual
+    ("sha256", 150_000),
+    ("sha256", 200_000),
+    ("sha256", 260_000),   # Werkzeug/Flask default
+    ("sha256", 300_000),
+    ("sha256", 400_000),
+    ("sha256", 500_000),
+    ("sha256", 750_000),
+    ("sha256", 1_000_000),
+    ("sha512", 50_000),
+    ("sha512", 100_000),
+    ("sha512", 150_000),
+    ("sha512", 200_000),
+    ("sha512", 260_000),
+]
+
+BACKEND_DIR = Path(__file__).resolve().parent
+APP_DIR = BACKEND_DIR.parent
+REPO_ROOT = APP_DIR.parent
+DOCS_DB_DIR = REPO_ROOT / "docs" / "db"
 
 # Cargar variables de entorno preferentemente desde el archivo `app/.env` (si existe),
 # y luego cargar cualquier `.env` en el directorio de trabajo como fallback.
-load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+load_dotenv(str(APP_DIR / '.env'))
 load_dotenv()
 
 DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
@@ -140,15 +190,17 @@ def ensure_schema():
             c.execute("""
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                email VARCHAR(120) NOT NULL UNIQUE,
+                email VARCHAR(255) NOT NULL UNIQUE,
                 nombre VARCHAR(100) NOT NULL,
                 password_hash VARBINARY(128) NOT NULL,
                 salt VARBINARY(32) NOT NULL,
-                rol ENUM('user','admin') NOT NULL DEFAULT 'user',
-                creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                password_reset_required TINYINT(1) NOT NULL DEFAULT 0,
+                rol VARCHAR(32) NOT NULL DEFAULT 'user',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             """)
-            # asegurar columna password_reset_required si no existe
+            # asegurar columna password_reset_required si no existe (para esquemas legados)
             c.execute("""
             ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS password_reset_required TINYINT(1) NOT NULL DEFAULT 0;
             """)
@@ -156,6 +208,8 @@ def ensure_schema():
     finally:
         conn.close()
 
+
+@lru_cache(maxsize=256)
 def schema_has(table: str, column: Optional[str] = None, db: Optional[str] = None) -> bool:
     conn = get_conn()
     try:
@@ -183,9 +237,121 @@ def hash_password(password: str, salt: Optional[bytes] = None) -> Tuple[bytes, b
     dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 100_000, dklen=32)
     return dk, salt
 
-def verify_password(password: str, password_hash: bytes, salt: bytes) -> bool:
-    dk, _ = hash_password(password, salt)
-    return secrets.compare_digest(dk, password_hash)
+def verify_password(password: str, password_hash: Any, salt: Optional[Any] = None) -> bool:
+    """
+    Verifica contraseñas generadas con el esquema actual (pbkdf2 + salt binario)
+    y contraseñas heredadas del sistema anterior (sin salt o en formato string).
+    """
+    salt_bytes = _coerce_bytes(salt)
+    stored_bytes = _coerce_bytes(password_hash)
+    if salt_bytes and stored_bytes:
+        if _verify_pbkdf2_variants(password, salt_bytes, stored_bytes):
+            return True
+    return verify_legacy_password(password, password_hash, salt_bytes)
+
+
+def _verify_pbkdf2_variants(password: str, salt: bytes, expected: bytes) -> bool:
+    """Intenta validar hashes PBKDF2 conocidos/legacy."""
+    dklen = len(expected)
+    if dklen not in (32, 48, 64):
+        return False
+    for hash_name, iterations in PBKDF2_VARIANTS:
+        try:
+            cand = hashlib.pbkdf2_hmac(
+                hash_name, password.encode("utf-8"), salt, iterations, dklen=dklen
+            )
+        except Exception:
+            continue
+        if secrets.compare_digest(cand, expected):
+            return True
+    return False
+
+
+def _coerce_bytes(value: Optional[Any]) -> Optional[bytes]:
+    if value is None:
+        return None
+    if isinstance(value, memoryview):
+        return value.tobytes()
+    if isinstance(value, bytearray):
+        return bytes(value)
+    if isinstance(value, bytes):
+        return value
+    return None
+
+
+def _coerce_str(value: Optional[Any]) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        try:
+            return bytes(value).decode("utf-8")
+        except UnicodeDecodeError:
+            return None
+    return str(value)
+
+
+def verify_legacy_password(password: str, legacy_hash: Any, salt: Optional[bytes] = None) -> bool:
+    """
+    Compatibilidad con hashes antiguos.
+    Soporta formatos comunes:
+      - Werkzeug/Flask (`pbkdf2:sha256:260000$sal$hash`)
+      - bcrypt (`$2b$...`)
+      - SHA256 (hex/binary) con y sin salt
+      - En último caso, compara texto plano (por si alguna fila quedó así)
+    """
+    legacy_str = _coerce_str(legacy_hash)
+    if legacy_str:
+        legacy = legacy_str.strip()
+        if legacy.startswith("pbkdf2:"):
+            return _verify_werkzeug_pbkdf2(password, legacy)
+        if legacy.startswith(("$2a$", "$2b$", "$2y$")) and bcrypt_hasher is not None:
+            try:
+                return bcrypt_hasher.verify(password, legacy)
+            except Exception:
+                return False
+        if PASSWORD_CONTEXT is not None:
+            try:
+                if PASSWORD_CONTEXT.identify(legacy):
+                    return PASSWORD_CONTEXT.verify(password, legacy)
+            except Exception:
+                pass
+        if len(legacy) == 64 and all(c in string.hexdigits for c in legacy):
+            digest = hashlib.sha256(password.encode("utf-8")).hexdigest()
+            return secrets.compare_digest(digest, legacy.lower())
+        if secrets.compare_digest(legacy, password):
+            return True
+
+    legacy_bytes = _coerce_bytes(legacy_hash)
+    if legacy_bytes:
+        pw_bytes = password.encode("utf-8")
+        salt_bytes = salt or b""
+        candidates = [
+            hashlib.sha256(pw_bytes).digest(),
+            hashlib.sha256(salt_bytes + pw_bytes).digest(),
+            hashlib.sha256(pw_bytes + salt_bytes).digest(),
+            hashlib.sha256(salt_bytes + pw_bytes + salt_bytes).digest(),
+        ]
+        for cand in candidates:
+            if len(cand) == len(legacy_bytes) and secrets.compare_digest(cand, legacy_bytes):
+                return True
+    return False
+
+
+def _verify_werkzeug_pbkdf2(password: str, stored: str) -> bool:
+    try:
+        method_part, salt, stored_hash = stored.split("$")
+        method_bits = method_part.split(":")
+        if not method_bits or method_bits[0] != "pbkdf2":
+            return False
+        hash_name = method_bits[1] if len(method_bits) > 1 and method_bits[1] else "sha256"
+        iterations = int(method_bits[2]) if len(method_bits) > 2 and method_bits[2] else 260000
+        dk = hashlib.pbkdf2_hmac(hash_name, password.encode("utf-8"), salt.encode("utf-8"), iterations)
+        encoded = base64.b64encode(dk).decode("utf-8").strip()
+        return hmac.compare_digest(encoded, stored_hash.strip())
+    except Exception:
+        return False
 
 # ----------------------------
 # Helpers de usuario
@@ -196,7 +362,7 @@ def create_user(email: str, nombre: str, password: str, rol: str = "user") -> in
         pwd, salt = hash_password(password)
         # Map application role names to the DB's allowed values.
         # The production DB uses ('admin','cliente','staff') for `rol`.
-        role_map = {"user": "cliente", "admin": "admin"}
+        role_map = {"user": "user", "admin": "admin"}
         db_rol = role_map.get(rol, rol)
 
         with conn.cursor() as c:
@@ -249,6 +415,21 @@ def _map_db_role_to_app(db_role: str) -> str:
         'staff': 'admin',
     }
     return mapping.get(db_role, db_role)
+
+
+def upgrade_legacy_password_hash(user_id: int, password: str) -> None:
+    """Convierte un hash heredado (sin salt) al formato nuevo."""
+    conn = get_conn()
+    try:
+        pwd, salt = hash_password(password)
+        with conn.cursor() as c:
+            c.execute(
+                "UPDATE usuarios SET password_hash=%s, salt=%s WHERE id=%s",
+                (pwd, salt, user_id),
+            )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 # ----------------------------
@@ -390,10 +571,8 @@ def write_pending_token(to_email: str, token: str) -> bool:
     Este archivo se crea con nombre `pending_reset_tokens_YYYYMMDD.csv` y se append.
     """
     try:
-        from pathlib import Path
-        import csv
         date = datetime.now(timezone.utc).strftime('%Y%m%d')
-        outdir = Path(__file__).resolve().parent.parent / 'docs' / 'db'
+        outdir = DOCS_DB_DIR
         outdir.mkdir(parents=True, exist_ok=True)
         fname = outdir / f'pending_reset_tokens_{date}.csv'
         # token no se guarda en claro en BD, aquí queda como último recurso para operador
@@ -409,6 +588,24 @@ DBError = MySQLError
 DBOperationalError = OperationalError
 DBIntegrityError = IntegrityError
 DBProgrammingError = ProgrammingError
+
+# ----------------------------
+# SQLAlchemy engine (para scripts utilitarios)
+# ----------------------------
+def _build_engine():
+    user = quote_plus(DB_USER)
+    password = quote_plus(DB_PASS)
+    host = DB_HOST
+    port = DB_PORT
+    db = DB_NAME
+    url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{db}?charset=utf8mb4"
+    connect_args = {}
+    if DB_SSL_CA:
+        connect_args["ssl"] = {"ca": DB_SSL_CA}
+    return create_engine(url, pool_pre_ping=True, connect_args=connect_args)
+
+
+engine = _build_engine()
 
 # Intentar garantizar esquema al importar
 try:

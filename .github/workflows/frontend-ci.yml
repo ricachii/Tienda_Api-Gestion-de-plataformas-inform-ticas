@@ -72,4 +72,7 @@ jobs:
           # Run Playwright from the frontend package directory so node module
           # resolution finds @playwright/test, but point at the repo-level
           # config and tests directory.
+          # ensure NODE_PATH points to the frontend node_modules so tests located
+          # outside the package can require @playwright/test without issues
+          export NODE_PATH=$(pwd)/node_modules
           npx playwright test --config=../../playwright.config.js ../../tests/playwright

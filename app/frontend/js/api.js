@@ -1,9 +1,6 @@
 // app/frontend/js/api.js
 /* eslint-env browser, es2021 */
 
-// app/frontend/js/api.js
-/* eslint-env browser, es2021 */
-
 // ===== Autodetección de API =====
 export let API_BASE = window.location.origin;
 
@@ -55,7 +52,7 @@ export function clearAuth() {
 }
 
 function needsAuthHeader(url) {
-  return /\/admin\//.test(url) || /\/me$/.test(url);
+  return /\/admin\//.test(url) || /\/me$/.test(url) || /\/orders/.test(url);
 }
 
 function buildHeaders(url, headers = {}) {
@@ -150,6 +147,13 @@ export const apiMe = () => fetchJSON(`${API_BASE}/me`, { method:'GET' });
 export const getVentasResumen = () => fetchJSON(`${API_BASE}/admin/ventas/resumen`);
 export const getVentasSerie = () => fetchJSON(`${API_BASE}/admin/ventas/serie`);
 export const getVentasCSV = () => fetchJSON(`${API_BASE}/admin/ventas.csv`);
+export const getOrders = (page=1, size=20, status='', email='') => {
+  const p = new URLSearchParams({ page, size });
+  if(status) p.set('status', status);
+  if(email) p.set('email', email);
+  return fetchJSON(`${API_BASE}/orders?${p.toString()}`);
+};
+export const getOrder = (orderId) => fetchJSON(`${API_BASE}/orders/${orderId}`);
 
 // Explicit named exports to satisfy bundlers that may not detect all hoisted exports
 // NOTE: All symbols are exported where they are defined above.
