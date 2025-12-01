@@ -1,0 +1,16 @@
+GPT-5: para planificación de cambios, refactors complejos, generación de tests “con criterio” (mejor razonamiento). Si lo tienes disponible en tu plan: úsalo como default de Chat. 
+GitHub Docs
+
+GPT-5-Codex (Public preview): cuando quieras edits/completions de código muy dirigidas y “agentic” (arreglar un módulo, migrar endpoints, etc.). Requiere VS Code reciente; figura como soportado en VS Code ≥1.104.1. 
+GitHub Docs
+
+GPT-4.1: sólido y estable; buena alternativa si 5 no está disponible o estás corto de cuota premium. 
+GitHub Docs
+
+Claude Sonnet/Opus: muy buenos para explicar código, documentación y revisar PRs largos (excelente lectura de contexto). Revisa disponibilidad en tu plan. 
+GitHub Docs
+
+Gemini 2.5 Pro: opción equilibrada para análisis y código, útil si prefieres alternar entre proveedores. 
+GitHub Docs
+
+Grok Code Fast 1: baja latencia para “autocomplete” rápido en sesiones largas.

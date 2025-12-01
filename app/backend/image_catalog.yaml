@@ -1,0 +1,41 @@
+# Catálogo centralizado de imágenes.
+# Mapea imagen_ref de la DB a las URLs de los archivos PNG reales.
+
+default:
+  base_url: /media/products
+
+items:
+  d-nq-np-615095-mlc87061585949-072025-o:
+    path: whey_isolate_1kg.png
+  71ciadaemfl-ac-uf1000-1000-ql80:
+    path: whey_concentrate_1kg.png
+  '306':
+    path: proteina_vegana_1kg.png
+  creatina-300g:
+    path: creatina_monohidratada_300g.png
+  preentreno-300g:
+    path: pre-entreno_300g.png
+  bcaa-211-300g:
+    path: bcaa_300g.png
+  omega3-120caps:
+    path: omega-3_1000mg_120_caps.png
+  multivit-90tabs:
+    path: multivitaminico_90caps.png
+  barritas-12un:
+    path: barritas_proteicas_12un.png
+  electrolitos-500g:
+    path: electrolitos_500g.png
+  glutamina-300g:
+    path: glutamina_300g.png
+  caseina-1kg:
+    path: caseina_1kg_vainilla.png
+  creatina-1kg:
+    path: Creatina Monohidratada 1kg.png
+  creatina-micronizada-250g:
+    path: Creatina Micronizada 250g.png
+  creatina-beta-300g:
+    path: Creatina + Beta-alanina 300g.png
+  creatina-premium-300g:
+    path: Creatina Premium 300g.png
+  creatina-150caps:
+    path: Creatina Monohidratada 150 caps.png

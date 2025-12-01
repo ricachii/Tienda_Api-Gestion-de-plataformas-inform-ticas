@@ -1,0 +1,17 @@
+<svg width="64px" height="64px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradBtnEye" x1="0" y1="0" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9b5bff" />
+      <stop offset="100%" stop-color="#8257E6" />
+    </linearGradient>
+    <filter id="glowBtnEye" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="0.6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <g filter="url(#glowBtnEye)">
+    <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="url(#gradBtnEye)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="12" cy="12" r="3" stroke="url(#gradBtnEye)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

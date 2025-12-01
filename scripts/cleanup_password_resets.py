@@ -3,7 +3,7 @@
 Se puede ejecutar via cron o systemd timer.
 """
 import os
-from app.db import get_conn
+from app.backend.db import get_conn
 
 def cleanup():
     conn = get_conn()

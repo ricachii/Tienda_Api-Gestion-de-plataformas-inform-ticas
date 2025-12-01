@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800px" height="800px" viewBox="0 0 516.375 516.375">
+  <defs>
+    <linearGradient id="vitaSolidNeonGradient" x1="0" y1="0" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9b5bff" />
+      <stop offset="100%" stop-color="#8257E6" />
+    </linearGradient>
+    
+    <filter id="solidNeonGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g filter="url(#solidNeonGlow)">
+    <path fill="url(#vitaSolidNeonGradient)" d="M478.125,248.625v-28.688c0-15.3-13.388-28.688-28.688-28.688c-3.825,0-5.737,0-9.562,1.913v-11.475
+		c0-15.3-13.388-28.688-28.688-28.688S382.5,166.388,382.5,181.688v66.938H133.875v-66.938c0-15.3-13.388-28.688-28.688-28.688
+		S76.5,166.388,76.5,181.688v11.475c-3.825-1.913-5.737-1.913-9.562-1.913c-15.3,0-28.688,13.388-28.688,28.688v28.688H0v19.125
+		h38.25v28.688c0,15.3,13.388,28.688,28.688,28.688c3.825,0,5.737,0,9.562-1.912v11.475c0,15.3,13.388,28.688,28.688,28.688
+		s28.688-13.388,28.688-28.688V267.75H382.5v66.938c0,15.3,13.388,28.688,28.688,28.688s28.688-13.388,28.688-28.688v-11.475
+		c3.825,1.912,5.737,1.912,9.562,1.912c15.3,0,28.688-13.388,28.688-28.688V267.75h38.25v-19.125H478.125z"/>
+  </g>
+</svg>
